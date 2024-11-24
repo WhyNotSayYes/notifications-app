@@ -149,6 +149,7 @@ function showNotification(message) {
 
 
 
+
 // Функция обновления элемента списка напоминаний
 function updateReminderInDOM(reminder) {
     const index = reminders.indexOf(reminder);

@@ -104,9 +104,12 @@ function scheduleReminder(reminder) {
     setTimeout(() => {
         const notificationTime = reminder.datetime.toLocaleString(); // Используем строку времени как уникальный идентификатор
 
-        // Если уведомление уже существует для этого времени, добавляем новый комментарий
+        // Если уведомление уже существует для этого времени, добавляем новый комментарий, если его нет в списке
         if (scheduledNotifications[notificationTime]) {
-            scheduledNotifications[notificationTime].push(reminder.comment);
+            // Проверяем, чтобы не дублировать комментарии
+            if (!scheduledNotifications[notificationTime].includes(reminder.comment)) {
+                scheduledNotifications[notificationTime].push(reminder.comment);
+            }
         } else {
             // Иначе создаем новый массив с комментариями
             scheduledNotifications[notificationTime] = [reminder.comment];
@@ -115,11 +118,15 @@ function scheduleReminder(reminder) {
         // Отображаем объединенное уведомление
         showNotification(scheduledNotifications[notificationTime]);
 
+        // После показа уведомления очищаем список, чтобы не было дублирования
+        delete scheduledNotifications[notificationTime];
+
         // Перезапускаем напоминание через заданный интервал
         reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
         scheduleReminder(reminder); // Перезапускаем напоминание
     }, timeDiff);
 }
+
 
 
 // Функция для показа уведомлений

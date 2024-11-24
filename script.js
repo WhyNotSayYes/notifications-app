@@ -87,20 +87,44 @@ saveReminderBtn.addEventListener("click", () => {
 // Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
-    const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) return alert("Invalid reminder time.");
 
+    // Если время напоминания уже прошло, пропускаем его
+    const timeDiff = reminder.datetime - now;
+    if (timeDiff <= 0) return;
+
+    // Проверка времени выключения
+    if (reminder.disableTime && now >= reminder.disableTime) {
+        removeReminder(reminder);
+        return; // Прерываем выполнение, так как напоминание отключено
+    }
+
+    // Запускаем напоминание
     setTimeout(() => {
         showNotification(reminder.comment);
 
-        if (reminder.disableTime && new Date() >= reminder.disableTime) return;
+        // Если напоминание должно быть отключено, проверяем ещё раз
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return;
+        }
 
+        // Устанавливаем новое время напоминания на основе частоты
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
-        scheduleReminder(reminder);
+        scheduleReminder(reminder); // Перезапускаем напоминание
     }, timeDiff);
 }
+
+// Функция удаления напоминания
+function removeReminder(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        reminders.splice(index, 1); // Удаляем напоминание из массива
+        updateReminderList(); // Обновляем список
+    }
+}
+
 
 // Show Windows notification
 function showNotification(message) {
@@ -121,7 +145,7 @@ function showNotification(message) {
 
 // Update the reminder list in the UI
 function updateReminderList() {
-    reminderList.innerHTML = ""; // Clear the list
+    reminderList.innerHTML = ""; // Очищаем список
 
     reminders.forEach((reminder, index) => {
         const now = new Date();
@@ -142,6 +166,7 @@ function updateReminderList() {
         reminderList.appendChild(listItem);
     });
 
+    // Добавляем обработчики для кнопок редактирования и удаления
     document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
@@ -157,6 +182,7 @@ function updateReminderList() {
         });
     });
 }
+
 
 // Edit reminder
 function editReminder(reminder) {

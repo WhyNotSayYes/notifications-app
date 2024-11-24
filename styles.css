@@ -71,3 +71,66 @@ button {
 .hidden {
     display: none;
 }
+
+/* Стили для списка напоминаний */
+#reminder-items {
+    list-style: none;
+    padding: 0;
+}
+
+#reminder-items li {
+    background-color: #f9f9f9;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Оформление текста напоминания */
+#reminder-items li .reminder-details {
+    flex: 1;
+    padding-right: 20px; /* Добавим отступ перед кнопками */
+    text-align: left;
+}
+
+#reminder-items li .reminder-details .comment {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+#reminder-items li .reminder-details .time {
+    font-size: 14px;
+    color: #555;
+}
+
+#reminder-items li .reminder-details .time-left {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+#reminder-items li .reminder-details .disable-time {
+    font-size: 12px;
+    color: #007bff;  /* Синий цвет */
+    margin-top: 4px;
+}
+
+
+/* Кнопки редактирования и удаления */
+#reminder-items li button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-left: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#reminder-items li button:hover {
+    background-color: #0056b3;
+}
+

@@ -76,12 +76,14 @@ saveReminderBtn.addEventListener("click", () => {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
+        // После добавления напоминания запускаем его срабатывание
         scheduleReminder(newReminder);
     }
 
-    updateReminderList(); // Обновляем список
+    updateReminderList(); // Обновляем список сразу после создания
     popup.classList.add("hidden");
 });
+
 
 // Schedule reminders
 function scheduleReminder(reminder) {
@@ -136,7 +138,12 @@ function updateReminderInDOM(reminder) {
 
         // Обновляем содержимое элемента списка
         listItem.innerHTML = `
-            ${reminder.comment} - ${reminder.datetime.toLocaleString()} - ${timeLeft} (${disableTime})
+            <div class="reminder-details">
+                <div class="comment">${reminder.comment}</div>
+                <div class="time">${reminder.datetime.toLocaleString()}</div>
+                <div class="time-left">Time left: ${timeLeft}</div>
+                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+            </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
@@ -152,6 +159,7 @@ function updateReminderInDOM(reminder) {
         });
     }
 }
+
 
 // Функция удаления напоминания
 function removeReminder(reminder) {
@@ -180,6 +188,7 @@ function showNotification(message) {
 }
 
 // Update the reminder list in the UI
+// Обновление списка напоминаний, добавляем все параметры сразу
 function updateReminderList() {
     reminderList.innerHTML = ""; // Clear the list
 
@@ -192,9 +201,15 @@ function updateReminderList() {
 
         const timeLeft = formatTimeLeft(timeDiff);
 
+        // Обновляем содержимое элемента списка
         const listItem = document.createElement("li");
         listItem.innerHTML = `
-            ${reminder.comment} - ${reminder.datetime.toLocaleString()} - ${timeLeft} (${disableTime})
+            <div class="reminder-details">
+                <div class="comment">${reminder.comment}</div>
+                <div class="time">${reminder.datetime.toLocaleString()}</div>
+                <div class="time-left">Time left: ${timeLeft}</div>
+                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+            </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
@@ -202,6 +217,7 @@ function updateReminderList() {
         reminderList.appendChild(listItem);
     });
 
+    // Повторно добавляем обработчики для кнопок
     document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
@@ -217,6 +233,7 @@ function updateReminderList() {
         });
     });
 }
+
 
 // Edit reminder
 function editReminder(reminder) {

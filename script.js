@@ -115,8 +115,11 @@ function scheduleReminder(reminder) {
             scheduledNotifications[notificationTime] = [reminder.comment];
         }
 
+        // Формируем объединенный текст уведомления
+        const combinedMessage = scheduledNotifications[notificationTime].map((comment, index) => `${index + 1}) ${comment}`).join("\n");
+
         // Отображаем объединенное уведомление
-        showNotification(scheduledNotifications[notificationTime]);
+        showNotification(combinedMessage);
 
         // После показа уведомления очищаем список, чтобы не было дублирования
         delete scheduledNotifications[notificationTime];
@@ -127,22 +130,14 @@ function scheduleReminder(reminder) {
     }, timeDiff);
 }
 
-
-
-// Функция для показа уведомлений
-function showNotification(comments) {
+// Show Windows notification
+function showNotification(message) {
     if (Notification.permission === "granted") {
-        // Формируем текст уведомления
-        const notificationBody = comments.map((comment, index) => `${index + 1}) ${comment}`).join('\n');
-
-        new Notification("Reminder", {
-            body: notificationBody,
-            icon: 'path_to_icon.png', // Можно добавить иконку уведомления
-        });
+        new Notification("Reminder", { body: message });
     } else if (Notification.permission === "default") {
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
-                new Notification("Reminder", { body: notificationBody });
+                new Notification("Reminder", { body: message });
             } else {
                 console.warn("Notifications denied by the user.");
             }
@@ -151,6 +146,7 @@ function showNotification(comments) {
         console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
+
 
 
 // Функция обновления элемента списка напоминаний

@@ -226,3 +226,18 @@ button {
     align-items: center;
     gap: 10px;
 }
+
+#popup .form-group {
+    margin-bottom: 15px; /* Расстояние между элементами */
+}
+
+#disable-time-checkbox {
+    order: 1; /* Перемещаем чекбокс после текста */
+    margin-left: 10px; /* Добавляем отступ между текстом и чекбоксом */
+}
+
+#checkbox-disable-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px; /* Отступ между чекбоксом и текстом */
+}

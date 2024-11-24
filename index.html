@@ -24,34 +24,54 @@
         <div class="popup-content">
             <span id="close-popup" class="close">&times;</span>
             <h2 id="popup-title">New Reminder</h2>
-
-            <label for="comment">Comment:</label>
-            <input type="text" id="comment" placeholder="Enter a comment" required>
-
-            <label for="reminder-datetime">Date and Time:</label>
-            <input type="datetime-local" id="reminder-datetime" required>
-
-            <label for="frequency">Frequency:</label>
-            <select id="frequency">
-                <option value="60">Every 1 hour</option>
-                <option value="120">Every 2 hours</option>
-                <option value="custom">Custom</option>
-            </select>
-
-            <div id="custom-frequency" class="hidden">
+    
+            <!-- Обертка для поля комментария -->
+            <div class="form-group">
+                <label for="comment">Comment:</label>
+                <input type="text" id="comment" placeholder="Enter a comment" required>
+            </div>
+    
+            <!-- Обертка для поля даты и времени -->
+            <div class="form-group">
+                <label for="reminder-datetime">Date and Time:</label>
+                <input type="datetime-local" id="reminder-datetime" required>
+            </div>
+    
+            <!-- Обертка для поля частоты -->
+            <div class="form-group">
+                <label for="frequency">Frequency:</label>
+                <select id="frequency">
+                    <option value="60">Every 1 hour</option>
+                    <option value="120">Every 2 hours</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+    
+            <!-- Обертка для кастомной частоты -->
+            <div id="custom-frequency" class="hidden form-group">
                 <label for="custom-minutes">Custom Frequency (minutes):</label>
                 <input type="number" id="custom-minutes" min="1" max="999">
             </div>
-
-            <label>
-                <input type="checkbox" id="disable-time-checkbox">
-                Disable at a specific time
-            </label>
-            <input type="datetime-local" id="disable-datetime" class="hidden">
-
-            <button id="save-reminder">Save</button>
+    
+            <!-- Обертка для чекбокса выключения -->
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="disable-time-checkbox">
+                    Disable at a specific time
+                </label>
+            </div>
+    
+            <!-- Обертка для поля с датой выключения -->
+            <div id="disable-datetime-container" class="hidden form-group">
+                <label for="disable-datetime">Disable Date and Time:</label>
+                <input type="datetime-local" id="disable-datetime">
+            </div>
+    
+            <!-- Кнопка сохранения -->
+            <button type="button" id="save-reminder">Save</button>
         </div>
     </div>
+    
 
     <script src="script.js"></script>
 </body>

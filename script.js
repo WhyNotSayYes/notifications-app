@@ -20,7 +20,7 @@ const frequencySelect = document.getElementById("frequency");
 const customMinutesField = document.getElementById("custom-frequency");
 const customMinutesInput = document.getElementById("custom-minutes");
 const disableCheckbox = document.getElementById("disable-time-checkbox");
-const disableDatetimeField = document.getElementById("disable-datetime");
+const disableDatetimeField = document.getElementById("disable-datetime-container");
 const reminderList = document.getElementById("reminder-items");
 
 // Current editing reminder (if any)
@@ -49,7 +49,12 @@ frequencySelect.addEventListener("change", () => {
 
 // Show/hide disable datetime field
 disableCheckbox.addEventListener("change", () => {
-    disableDatetimeField.classList.toggle("hidden", !disableCheckbox.checked);
+    // Когда чекбокс включен, показываем поле для даты выключения, иначе скрываем его
+    if (disableCheckbox.checked) {
+        disableDatetimeField.classList.remove("hidden");
+    } else {
+        disableDatetimeField.classList.add("hidden");
+    }
 });
 
 // Save reminder
@@ -76,13 +81,15 @@ saveReminderBtn.addEventListener("click", () => {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
-        // После добавления напоминания запускаем его срабатывание
+
+        // Запускаем его срабатывание
         scheduleReminder(newReminder);
     }
 
-    updateReminderList(); // Обновляем список сразу после создания
-    popup.classList.add("hidden");
+    updateReminderList(); // Обновляем список
+    popup.classList.add("hidden"); // Закрываем попап
 });
+
 
 
 // Schedule reminders
@@ -93,7 +100,7 @@ function scheduleReminder(reminder) {
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
-    // Проверка времени выключения
+    // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
         return; // Прерываем выполнение, так как напоминание отключено
@@ -101,12 +108,13 @@ function scheduleReminder(reminder) {
 
     // Запускаем напоминание
     setTimeout(() => {
+        // Отображаем уведомление
         showNotification(reminder.comment);
 
-        // Если напоминание должно быть отключено, проверяем ещё раз
+        // Если включено автоматическое удаление по времени
         if (reminder.disableTime && new Date() >= reminder.disableTime) {
             removeReminder(reminder);
-            return;
+            return; // Прерываем выполнение
         }
 
         // Устанавливаем новое время напоминания на основе частоты
@@ -118,9 +126,10 @@ function scheduleReminder(reminder) {
         updateReminderInDOM(reminder);
 
         // Перезапускаем напоминание
-        scheduleReminder(reminder); // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
+
 
 // Функция обновления элемента списка напоминаний
 function updateReminderInDOM(reminder) {
@@ -130,35 +139,34 @@ function updateReminderInDOM(reminder) {
 
         const now = new Date();
         const timeDiff = reminder.datetime - now;
-        const disableTime = reminder.disableTime
-            ? `Until ${reminder.disableTime.toLocaleString()}`
-            : "No limit";
-
         const timeLeft = formatTimeLeft(timeDiff);
 
         // Обновляем содержимое элемента списка
         listItem.innerHTML = `
             <div class="reminder-details">
                 <div class="comment">${reminder.comment}</div>
-                <div class="time">${reminder.datetime.toLocaleString()}</div>
+                <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
                 <div class="time-left">Time left: ${timeLeft}</div>
-                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+                ${
+                    reminder.disableTime
+                        ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>`
+                        : ""
+                }
             </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
 
-        // Повторно добавляем обработчики для кнопок
+        // Добавляем обработчики кнопок
         listItem.querySelector(".edit-btn").addEventListener("click", () => {
-            editReminder(reminders[index]);
+            editReminder(reminder);
         });
-
         listItem.querySelector(".delete-btn").addEventListener("click", () => {
-            reminders.splice(index, 1);
-            updateReminderList();
+            removeReminder(reminder);
         });
     }
 }
+
 
 
 // Функция удаления напоминания

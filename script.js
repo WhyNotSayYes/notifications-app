@@ -57,7 +57,7 @@ disableCheckbox.addEventListener("change", () => {
     }
 });
 
-// Save reminder
+// Сохранение напоминания
 saveReminderBtn.addEventListener("click", () => {
     const comment = document.getElementById("comment").value;
     const datetime = document.getElementById("reminder-datetime").value;
@@ -81,46 +81,46 @@ saveReminderBtn.addEventListener("click", () => {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
-
-        // Запускаем его срабатывание
+        
+        // После добавления напоминания запланировать его срабатывание
         scheduleReminder(newReminder);
     }
 
-    updateReminderList(); // Обновляем список
-    popup.classList.add("hidden"); // Закрываем попап
+    updateReminderList(); // Обновляем список сразу после создания
+    popup.classList.add("hidden");
 });
 
-
-
-// Schedule reminders
-// Сначала собираем все уведомления в массив
-function scheduleReminders(reminders) {
+// Функция для планирования напоминания
+function scheduleReminder(reminder) {
     const now = new Date();
-    
-    // Массив для таймаутов уведомлений
-    const notifications = reminders.map((reminder) => {
-        const timeDiff = reminder.datetime - now;
-        if (timeDiff <= 0) return; // Если уведомление прошло, пропускаем его
 
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                showNotification(reminder.comment);
-                resolve();
-            }, timeDiff);
-        });
-    });
+    // Если время напоминания уже прошло, пропускаем его
+    const timeDiff = reminder.datetime - now;
+    if (timeDiff <= 0) return;
 
-    // Запуск всех уведомлений одновременно
-    Promise.all(notifications).then(() => {
-        // После того как все уведомления всплыли, перезапускаем их с нужным интервалом
-        reminders.forEach((reminder) => {
-            reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-            scheduleReminder(reminder);  // Снова запланировать напоминание
-        });
-    });
+    setTimeout(() => {
+        showNotification(reminder.comment);
+
+        // Если напоминание должно быть отключено, проверяем ещё раз
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return;
+        }
+
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
+        );
+
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
+
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);  // Перезапускаем напоминание
+    }, timeDiff);
 }
 
-// Функция для показа уведомления
+// Функция для показа уведомлений
 function showNotification(message) {
     if (Notification.permission === "granted") {
         new Notification("Reminder", { body: message });
@@ -132,6 +132,7 @@ function showNotification(message) {
         });
     }
 }
+
 
 
 

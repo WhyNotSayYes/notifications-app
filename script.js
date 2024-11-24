@@ -92,41 +92,47 @@ saveReminderBtn.addEventListener("click", () => {
 
 
 
-// Schedule reminders
+// Словарь для хранения уведомлений по времени
+const notificationGroups = {};
+
+// Функция для группировки уведомлений
 function scheduleReminder(reminder) {
     const now = new Date();
-
-    // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
+
     if (timeDiff <= 0) return;
 
-    // Проверка времени выключения, если оно задано
-    if (reminder.disableTime && now >= reminder.disableTime) {
-        removeReminder(reminder);
-        return; // Прерываем выполнение, так как напоминание отключено
-    }
+    // Округляем время до минут
+    const roundedTime = new Date(reminder.datetime);
+    roundedTime.setSeconds(0);
+    roundedTime.setMilliseconds(0);
 
     // Запускаем напоминание
     setTimeout(() => {
-        // Отображаем уведомление
-        showNotification(reminder.comment);
+        const notificationTime = roundedTime.toLocaleString();
 
-        // Если включено автоматическое удаление по времени
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-            return; // Прерываем выполнение
+        // Если уже есть группа уведомлений для этого времени, добавляем новое уведомление
+        if (notificationGroups[notificationTime]) {
+            notificationGroups[notificationTime].push(reminder.comment);
+        } else {
+            // Если группы нет, создаем ее
+            notificationGroups[notificationTime] = [reminder.comment];
         }
 
-        // Устанавливаем новое время напоминания на основе частоты
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
+        // Формируем сообщение с объединенными комментариями
+        const combinedMessage = notificationGroups[notificationTime]
+            .map((comment, index) => `${index + 1}) ${comment}`)
+            .join("\n");
 
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
+        // Показываем уведомление с объединенными сообщениями
+        showNotification(combinedMessage);
 
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);
+        // После показа уведомления очищаем группу, чтобы не было дублирования
+        delete notificationGroups[notificationTime];
+
+        // Перезапускаем напоминание через заданный интервал
+        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+        scheduleReminder(reminder); // Перезапускаем напоминание
     }, timeDiff);
 }
 
@@ -178,7 +184,7 @@ function removeReminder(reminder) {
     }
 }
 
-// Show Windows notification
+// Функция для показа уведомлений
 function showNotification(message) {
     if (Notification.permission === "granted") {
         new Notification("Reminder", { body: message });
@@ -194,6 +200,7 @@ function showNotification(message) {
         console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
+
 
 // Update the reminder list in the UI
 // Обновление списка напоминаний, добавляем все параметры сразу

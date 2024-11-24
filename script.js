@@ -93,42 +93,46 @@ saveReminderBtn.addEventListener("click", () => {
 
 
 // Schedule reminders
-function scheduleReminder(reminder) {
+// Сначала собираем все уведомления в массив
+function scheduleReminders(reminders) {
     const now = new Date();
+    
+    // Массив для таймаутов уведомлений
+    const notifications = reminders.map((reminder) => {
+        const timeDiff = reminder.datetime - now;
+        if (timeDiff <= 0) return; // Если уведомление прошло, пропускаем его
 
-    // Если время напоминания уже прошло, пропускаем его
-    const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) return;
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                showNotification(reminder.comment);
+                resolve();
+            }, timeDiff);
+        });
+    });
 
-    // Проверка времени выключения, если оно задано
-    if (reminder.disableTime && now >= reminder.disableTime) {
-        removeReminder(reminder);
-        return; // Прерываем выполнение, так как напоминание отключено
-    }
-
-    // Запускаем напоминание
-    setTimeout(() => {
-        // Отображаем уведомление
-        showNotification(reminder.comment);
-
-        // Если включено автоматическое удаление по времени
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-            return; // Прерываем выполнение
-        }
-
-        // Устанавливаем новое время напоминания на основе частоты
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
-
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
-
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);
-    }, timeDiff);
+    // Запуск всех уведомлений одновременно
+    Promise.all(notifications).then(() => {
+        // После того как все уведомления всплыли, перезапускаем их с нужным интервалом
+        reminders.forEach((reminder) => {
+            reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+            scheduleReminder(reminder);  // Снова запланировать напоминание
+        });
+    });
 }
+
+// Функция для показа уведомления
+function showNotification(message) {
+    if (Notification.permission === "granted") {
+        new Notification("Reminder", { body: message });
+    } else if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+                new Notification("Reminder", { body: message });
+            }
+        });
+    }
+}
+
 
 
 // Функция обновления элемента списка напоминаний

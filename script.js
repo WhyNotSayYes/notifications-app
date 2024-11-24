@@ -90,7 +90,9 @@ saveReminderBtn.addEventListener("click", () => {
     popup.classList.add("hidden");
 });
 
-// Функция для планирования напоминания
+// Хранение объединенных уведомлений по времени
+let scheduledNotifications = {};
+
 function scheduleReminder(reminder) {
     const now = new Date();
 
@@ -98,42 +100,50 @@ function scheduleReminder(reminder) {
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
+    // Запускаем напоминание
     setTimeout(() => {
-        showNotification(reminder.comment);
+        const notificationTime = reminder.datetime.toLocaleString(); // Используем строку времени как уникальный идентификатор
 
-        // Если напоминание должно быть отключено, проверяем ещё раз
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-            return;
+        // Если уведомление уже существует для этого времени, добавляем новый комментарий
+        if (scheduledNotifications[notificationTime]) {
+            scheduledNotifications[notificationTime].push(reminder.comment);
+        } else {
+            // Иначе создаем новый массив с комментариями
+            scheduledNotifications[notificationTime] = [reminder.comment];
         }
 
-        // Устанавливаем новое время напоминания на основе частоты
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
+        // Отображаем объединенное уведомление
+        showNotification(scheduledNotifications[notificationTime]);
 
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
-
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);  // Перезапускаем напоминание
+        // Перезапускаем напоминание через заданный интервал
+        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+        scheduleReminder(reminder); // Перезапускаем напоминание
     }, timeDiff);
 }
 
+
 // Функция для показа уведомлений
-function showNotification(message) {
+function showNotification(comments) {
     if (Notification.permission === "granted") {
-        new Notification("Reminder", { body: message });
+        // Формируем текст уведомления
+        const notificationBody = comments.map((comment, index) => `${index + 1}) ${comment}`).join('\n');
+
+        new Notification("Reminder", {
+            body: notificationBody,
+            icon: 'path_to_icon.png', // Можно добавить иконку уведомления
+        });
     } else if (Notification.permission === "default") {
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
-                new Notification("Reminder", { body: message });
+                new Notification("Reminder", { body: notificationBody });
+            } else {
+                console.warn("Notifications denied by the user.");
             }
         });
+    } else {
+        console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
-
-
 
 
 // Функция обновления элемента списка напоминаний

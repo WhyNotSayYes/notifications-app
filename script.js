@@ -98,19 +98,21 @@ const notificationGroups = {};
 // Функция для группировки уведомлений
 function scheduleReminder(reminder) {
     const now = new Date();
-    const timeDiff = reminder.datetime - now;
 
+    // Если время напоминания уже прошло, пропускаем его
+    const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
-    // Округляем время до минут
+    // Округляем время до минут (удаляем секунды и миллисекунды)
     const roundedTime = new Date(reminder.datetime);
     roundedTime.setSeconds(0);
     roundedTime.setMilliseconds(0);
 
+    // Получаем строковое представление времени для группировки
+    const notificationTime = roundedTime.toLocaleString();
+
     // Запускаем напоминание
     setTimeout(() => {
-        const notificationTime = roundedTime.toLocaleString();
-
         // Если уже есть группа уведомлений для этого времени, добавляем новое уведомление
         if (notificationGroups[notificationTime]) {
             notificationGroups[notificationTime].push(reminder.comment);

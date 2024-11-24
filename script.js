@@ -67,19 +67,22 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
+        // Обновление существующего напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
     } else {
+        // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
         scheduleReminder(newReminder);
     }
 
-    updateReminderList();
+    updateReminderList(); // Обновляем список
     popup.classList.add("hidden");
 });
+
 
 // Schedule reminders
 function scheduleReminder(reminder) {
@@ -102,10 +105,8 @@ function scheduleReminder(reminder) {
 // Show Windows notification
 function showNotification(message) {
     if (Notification.permission === "granted") {
-        // Если разрешение уже предоставлено, сразу показываем уведомление
         new Notification("Reminder", { body: message });
     } else if (Notification.permission === "default") {
-        // Если разрешение ещё не запрашивалось, запрашиваем его один раз
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
                 new Notification("Reminder", { body: message });
@@ -114,20 +115,9 @@ function showNotification(message) {
             }
         });
     } else {
-        // Если разрешение было отклонено, выводим сообщение в консоль
         console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
-
-// Request notification permission on page load (optional)
-document.addEventListener("DOMContentLoaded", () => {
-    if (Notification.permission === "default") {
-        Notification.requestPermission().catch((err) => {
-            console.error("Notification permission request failed:", err);
-        });
-    }
-});
-
 
 // Update the reminder list in the UI
 function updateReminderList() {
@@ -152,7 +142,6 @@ function updateReminderList() {
         reminderList.appendChild(listItem);
     });
 
-    // Attach event listeners for edit and delete buttons
     document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
@@ -171,29 +160,48 @@ function updateReminderList() {
 
 // Edit reminder
 function editReminder(reminder) {
-    editingReminder = reminder;
+    editingReminder = reminder; // Сохраняем редактируемое напоминание
 
+    // Устанавливаем комментарий
     document.getElementById("comment").value = reminder.comment;
-    document.getElementById("reminder-datetime").value = reminder.datetime.toISOString().slice(0, 16);
-    frequencySelect.value = reminder.frequency;
-    if (frequencySelect.value === "custom") {
+
+    // Устанавливаем дату и время напоминания (в локальной временной зоне)
+    const localDatetime = new Date(reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16); // Формат для <input type="datetime-local">
+    document.getElementById("reminder-datetime").value = localDatetime;
+
+    // Устанавливаем частоту повторений
+    if (reminder.frequency && reminder.frequency !== 60 && reminder.frequency !== 120) {
+        // Если частота кастомная
+        frequencySelect.value = "custom";
         customMinutesField.classList.remove("hidden");
-        customMinutesInput.value = reminder.frequency;
+        customMinutesInput.value = reminder.frequency; // Устанавливаем пользовательское значение
     } else {
+        // Если частота стандартная (60 минут или 120 минут)
+        frequencySelect.value = reminder.frequency.toString();
         customMinutesField.classList.add("hidden");
+        customMinutesInput.value = ""; // Очищаем поле для пользовательской частоты
     }
 
+    // Устанавливаем дату и время выключения напоминания (если есть)
     if (reminder.disableTime) {
         disableCheckbox.checked = true;
         disableDatetimeField.classList.remove("hidden");
-        document.getElementById("disable-datetime").value = reminder.disableTime.toISOString().slice(0, 16);
+        const localDisableDatetime = new Date(reminder.disableTime.getTime() - reminder.disableTime.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16); // Формат для <input type="datetime-local">
+        document.getElementById("disable-datetime").value = localDisableDatetime;
     } else {
         disableCheckbox.checked = false;
         disableDatetimeField.classList.add("hidden");
+        document.getElementById("disable-datetime").value = ""; // Очищаем поле, если выключение не установлено
     }
 
+    // Показываем попап
     popup.classList.remove("hidden");
 }
+
 
 // Format time left
 function formatTimeLeft(timeDiff) {

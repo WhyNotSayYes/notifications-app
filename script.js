@@ -57,7 +57,7 @@ disableCheckbox.addEventListener("change", () => {
     }
 });
 
-// Сохранение напоминания
+// Save reminder
 saveReminderBtn.addEventListener("click", () => {
     const comment = document.getElementById("comment").value;
     const datetime = document.getElementById("reminder-datetime").value;
@@ -81,79 +81,54 @@ saveReminderBtn.addEventListener("click", () => {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
-        
-        // После добавления напоминания запланировать его срабатывание
+
+        // Запускаем его срабатывание
         scheduleReminder(newReminder);
     }
 
-    updateReminderList(); // Обновляем список сразу после создания
-    popup.classList.add("hidden");
+    updateReminderList(); // Обновляем список
+    popup.classList.add("hidden"); // Закрываем попап
 });
 
-// Хранение объединенных уведомлений по времени (округленное до минут)
-let scheduledNotifications = {};
 
+
+// Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
 
-    // Округляем время до минут (сбрасываем секунды и миллисекунды)
-    const roundedTime = new Date(reminder.datetime);
-    roundedTime.setSeconds(0);
-    roundedTime.setMilliseconds(0);
-
     // Если время напоминания уже прошло, пропускаем его
-    const timeDiff = roundedTime - now;
+    const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
+
+    // Проверка времени выключения, если оно задано
+    if (reminder.disableTime && now >= reminder.disableTime) {
+        removeReminder(reminder);
+        return; // Прерываем выполнение, так как напоминание отключено
+    }
 
     // Запускаем напоминание
     setTimeout(() => {
-        const notificationTime = roundedTime.toLocaleString(); // Используем строку времени как уникальный идентификатор
+        // Отображаем уведомление
+        showNotification(reminder.comment);
 
-        // Если уведомление уже существует для этого времени, добавляем новый комментарий
-        if (scheduledNotifications[notificationTime]) {
-            // Проверяем, чтобы не дублировать комментарии
-            if (!scheduledNotifications[notificationTime].includes(reminder.comment)) {
-                scheduledNotifications[notificationTime].push(reminder.comment);
-            }
-        } else {
-            // Иначе создаем новый массив с комментариями
-            scheduledNotifications[notificationTime] = [reminder.comment];
+        // Если включено автоматическое удаление по времени
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return; // Прерываем выполнение
         }
 
-        // Формируем объединенный текст уведомления
-        const combinedMessage = scheduledNotifications[notificationTime].map((comment, index) => `${index + 1}) ${comment}`).join("\n");
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
+        );
 
-        // Отображаем объединенное уведомление
-        showNotification(combinedMessage);
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
 
-        // После показа уведомления очищаем список для этого времени, чтобы не было дублирования
-        delete scheduledNotifications[notificationTime];
-
-        // Перезапускаем напоминание через заданный интервал
-        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-        scheduleReminder(reminder); // Перезапускаем напоминание
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
-
-// Show Windows notification
-function showNotification(message) {
-    if (Notification.permission === "granted") {
-        new Notification("Reminder", { body: message });
-    } else if (Notification.permission === "default") {
-        Notification.requestPermission().then((permission) => {
-            if (permission === "granted") {
-                new Notification("Reminder", { body: message });
-            } else {
-                console.warn("Notifications denied by the user.");
-            }
-        });
-    } else {
-        console.warn("Notifications are blocked. Please enable them in your browser settings.");
-    }
-}
-
-
-
 
 
 // Функция обновления элемента списка напоминаний

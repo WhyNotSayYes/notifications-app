@@ -71,88 +71,80 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
+        // Обновление существующего напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
     } else {
+        // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
-        scheduleReminder(newReminder);
+        scheduleReminder(newReminder); // Запускаем срабатывание
     }
 
-    updateReminderList();
-    popup.classList.add("hidden");
+    updateReminderList(); // Обновляем список
+    popup.classList.add("hidden"); // Закрываем попап
 });
-
-// Function to group reminders by the same time
-function groupRemindersByTime() {
-    const groupedReminders = {};
-
-    reminders.forEach((reminder) => {
-        const key = reminder.datetime.toISOString().slice(0, 16); // Use date + hours + minutes as the key
-        if (!groupedReminders[key]) {
-            groupedReminders[key] = [];
-        }
-        groupedReminders[key].push(reminder);
-    });
-
-    return groupedReminders;
-}
 
 // Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
+
+    // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
+    // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return;
+        return; // Прерываем выполнение, так как напоминание отключено
     }
 
+    // Запускаем напоминание
     setTimeout(() => {
-        const groupedReminders = groupRemindersByTime();
-        const key = reminder.datetime.toISOString().slice(0, 16);
+        groupAndShowNotifications(reminder);
 
-        // Если это время уже обрабатывается как групповое напоминание, не показываем отдельное
-        if (!groupedReminders[key] || groupedReminders[key].length === 1) {
-            showNotification(reminder.comment);
-        }
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
 
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-        } else {
-            reminder.datetime = new Date(
-                reminder.datetime.getTime() + reminder.frequency * 60000
-            );
-            updateReminderInDOM(reminder);
-            scheduleReminder(reminder);
-        }
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
+
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
 
-function scheduleGroupedReminders() {
+// Group notifications by time and show them
+function groupAndShowNotifications(reminder) {
     const groupedReminders = groupRemindersByTime();
+    const key = reminder.datetime.toISOString().slice(0, 16);
 
-    for (const [timeKey, remindersGroup] of Object.entries(groupedReminders)) {
-        const targetTime = new Date(timeKey);
-        const now = new Date();
-        const timeDiff = targetTime - now;
-
-        if (timeDiff > 0) {
-            setTimeout(() => {
-                const messages = remindersGroup.map(
-                    (r, index) => `${index + 1}) ${r.comment}`
-                );
-                showNotification(messages.join("\n"));
-            }, timeDiff);
-        }
+    if (groupedReminders[key]) {
+        const messages = groupedReminders[key].map(
+            (r, index) => `${index + 1}) ${r.comment}`
+        );
+        showNotification(messages.join("\n"));
+    } else {
+        showNotification(reminder.comment); // Для одиночных напоминаний
     }
 }
 
+// Group reminders by their datetime (ignoring seconds)
+function groupRemindersByTime() {
+    const grouped = {};
 
-// Function to show Windows notifications
+    reminders.forEach((reminder) => {
+        const key = reminder.datetime.toISOString().slice(0, 16); // Group by date, hour, and minute (ignoring seconds)
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(reminder);
+    });
+
+    return grouped;
+}
+
+// Show Windows notification
 function showNotification(message) {
     if (Notification.permission === "granted") {
         new Notification("Reminder", { body: message });
@@ -160,63 +152,39 @@ function showNotification(message) {
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
                 new Notification("Reminder", { body: message });
+            } else {
+                console.warn("Notifications denied by the user.");
             }
         });
+    } else {
+        console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
 
-// Функция для обновления элемента в DOM для конкретного напоминания
-function updateReminderInDOM(reminder) {
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        const listItem = reminderList.children[index];
+// Update the reminder list in the UI
+function updateReminderList() {
+    reminderList.innerHTML = ""; // Clear the list
 
+    reminders.forEach((reminder, index) => {
         const now = new Date();
         const timeDiff = reminder.datetime - now;
         const timeLeft = formatTimeLeft(timeDiff);
 
-        // Обновляем содержимое элемента списка
+        const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
                 <div class="comment">${reminder.comment}</div>
-                <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
+                <div class="time">${reminder.datetime.toLocaleString()}</div>
                 <div class="time-left">Time left: ${timeLeft}</div>
                 ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
             </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
-        // Добавляем обработчики кнопок
-        listItem.querySelector(".edit-btn").addEventListener("click", () => {
-            editReminder(reminder);
-        });
-        listItem.querySelector(".delete-btn").addEventListener("click", () => {
-            removeReminder(reminder);
-        });
-    }
-}
 
-// Update the reminder list in the UI
-// Функция, которая будет обновлять все напоминания в списке
-function updateReminderList() {
-    reminderList.innerHTML = ""; // Clear the list
-
-    reminders.forEach((reminder, index) => {
-        const listItem = document.createElement("li");
-        listItem.innerHTML = `
-            <div class="reminder-details">
-                <div class="comment">${reminder.comment}</div>
-                <div class="time">${reminder.datetime.toLocaleString()}</div>
-                <div class="time-left">Time left: ${formatTimeLeft(reminder.datetime - new Date())}</div>
-                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
-            </div>
-            <button class="edit-btn" data-index="${index}">Edit</button>
-            <button class="delete-btn" data-index="${index}">Delete</button>
-        `;
         reminderList.appendChild(listItem);
     });
 
-    // Повторно добавляем обработчики для кнопок
     document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
@@ -227,8 +195,7 @@ function updateReminderList() {
     document.querySelectorAll(".delete-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
-            reminders.splice(index, 1);
-            updateReminderList();
+            removeReminder(reminders[index]);
         });
     });
 }
@@ -236,35 +203,15 @@ function updateReminderList() {
 // Edit reminder
 function editReminder(reminder) {
     editingReminder = reminder;
+
+    // Update the popup fields with reminder details
     document.getElementById("comment").value = reminder.comment;
-
-    const localDatetime = new Date(reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16);
-    document.getElementById("reminder-datetime").value = localDatetime;
-
-    if (reminder.frequency && reminder.frequency !== 60 && reminder.frequency !== 120) {
-        frequencySelect.value = "custom";
-        customMinutesField.classList.remove("hidden");
-        customMinutesInput.value = reminder.frequency;
-    } else {
-        frequencySelect.value = reminder.frequency.toString();
-        customMinutesField.classList.add("hidden");
-        customMinutesInput.value = "";
-    }
-
-    if (reminder.disableTime) {
-        disableCheckbox.checked = true;
-        disableDatetimeField.classList.remove("hidden");
-        const localDisableDatetime = new Date(reminder.disableTime.getTime() - reminder.disableTime.getTimezoneOffset() * 60000)
-            .toISOString()
-            .slice(0, 16);
-        document.getElementById("disable-datetime").value = localDisableDatetime;
-    } else {
-        disableCheckbox.checked = false;
-        disableDatetimeField.classList.add("hidden");
-        document.getElementById("disable-datetime").value = "";
-    }
+    document.getElementById("reminder-datetime").value = reminder.datetime.toISOString().slice(0, 16);
+    frequencySelect.value = reminder.frequency;
+    customMinutesField.classList.add("hidden"); // Hide custom minutes input
+    disableCheckbox.checked = reminder.disableTime ? true : false;
+    disableDatetimeField.classList.toggle("hidden", !reminder.disableTime);
+    if (reminder.disableTime) document.getElementById("disable-datetime").value = reminder.disableTime.toISOString().slice(0, 16);
 
     popup.classList.remove("hidden");
 }

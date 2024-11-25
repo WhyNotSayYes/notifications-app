@@ -116,6 +116,40 @@ function scheduleReminder(reminder) {
     }, timeDiff);
 }
 
+// Update the reminder in the DOM
+function updateReminderInDOM(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        const listItem = reminderList.children[index];
+        
+        const now = new Date();
+        const timeDiff = reminder.datetime - now;
+        const timeLeft = formatTimeLeft(timeDiff);
+        
+        // Обновление содержимого элемента списка
+        listItem.innerHTML = `
+            <div class="reminder-details">
+                <div class="comment">${reminder.comment}</div>
+                <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
+                <div class="time-left">Time left: ${timeLeft}</div>
+                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+            </div>
+            <button class="edit-btn" data-index="${index}">Edit</button>
+            <button class="delete-btn" data-index="${index}">Delete</button>
+        `;
+        
+        // Повторное добавление обработчиков кнопок
+        listItem.querySelector(".edit-btn").addEventListener("click", () => {
+            editReminder(reminder);
+        });
+
+        listItem.querySelector(".delete-btn").addEventListener("click", () => {
+            removeReminder(reminder);
+        });
+    }
+}
+
+
 // Group notifications by time and show them
 function groupAndShowNotifications(reminder) {
     const groupedReminders = groupRemindersByTime();

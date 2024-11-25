@@ -165,6 +165,37 @@ function showNotification(message) {
     }
 }
 
+// Функция для обновления элемента в DOM для конкретного напоминания
+function updateReminderInDOM(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        const listItem = reminderList.children[index];
+
+        const now = new Date();
+        const timeDiff = reminder.datetime - now;
+        const timeLeft = formatTimeLeft(timeDiff);
+
+        // Обновляем содержимое элемента списка
+        listItem.innerHTML = `
+            <div class="reminder-details">
+                <div class="comment">${reminder.comment}</div>
+                <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
+                <div class="time-left">Time left: ${timeLeft}</div>
+                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+            </div>
+            <button class="edit-btn" data-index="${index}">Edit</button>
+            <button class="delete-btn" data-index="${index}">Delete</button>
+        `;
+        // Добавляем обработчики кнопок
+        listItem.querySelector(".edit-btn").addEventListener("click", () => {
+            editReminder(reminder);
+        });
+        listItem.querySelector(".delete-btn").addEventListener("click", () => {
+            removeReminder(reminder);
+        });
+    }
+}
+
 // Update the reminder list in the UI
 function updateReminderList() {
     reminderList.innerHTML = "";

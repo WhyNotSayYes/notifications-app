@@ -115,11 +115,9 @@ function scheduleReminder(reminder) {
         const groupedReminders = groupRemindersByTime();
         const key = reminder.datetime.toISOString().slice(0, 16);
 
-        if (groupedReminders[key]) {
-            const messages = groupedReminders[key].map(
-                (r, index) => `${index + 1}) ${r.comment}`
-            );
-            showNotification(messages.join("\n"));
+        // Если это время уже обрабатывается как групповое напоминание, не показываем отдельное
+        if (!groupedReminders[key] || groupedReminders[key].length === 1) {
+            showNotification(reminder.comment);
         }
 
         if (reminder.disableTime && new Date() >= reminder.disableTime) {
@@ -133,6 +131,26 @@ function scheduleReminder(reminder) {
         }
     }, timeDiff);
 }
+
+function scheduleGroupedReminders() {
+    const groupedReminders = groupRemindersByTime();
+
+    for (const [timeKey, remindersGroup] of Object.entries(groupedReminders)) {
+        const targetTime = new Date(timeKey);
+        const now = new Date();
+        const timeDiff = targetTime - now;
+
+        if (timeDiff > 0) {
+            setTimeout(() => {
+                const messages = remindersGroup.map(
+                    (r, index) => `${index + 1}) ${r.comment}`
+                );
+                showNotification(messages.join("\n"));
+            }, timeDiff);
+        }
+    }
+}
+
 
 // Function to show Windows notifications
 function showNotification(message) {

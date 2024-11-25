@@ -197,33 +197,26 @@ function updateReminderInDOM(reminder) {
 }
 
 // Update the reminder list in the UI
+// Функция, которая будет обновлять все напоминания в списке
 function updateReminderList() {
-    reminderList.innerHTML = "";
+    reminderList.innerHTML = ""; // Clear the list
 
     reminders.forEach((reminder, index) => {
-        const now = new Date();
-        const timeDiff = reminder.datetime - now;
-        const disableTime = reminder.disableTime
-            ? `Until ${reminder.disableTime.toLocaleString()}`
-            : "No limit";
-
-        const timeLeft = formatTimeLeft(timeDiff);
-
         const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
                 <div class="comment">${reminder.comment}</div>
                 <div class="time">${reminder.datetime.toLocaleString()}</div>
-                <div class="time-left">Time left: ${timeLeft}</div>
+                <div class="time-left">Time left: ${formatTimeLeft(reminder.datetime - new Date())}</div>
                 ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
             </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
-
         reminderList.appendChild(listItem);
     });
 
+    // Повторно добавляем обработчики для кнопок
     document.querySelectorAll(".edit-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
@@ -234,7 +227,8 @@ function updateReminderList() {
     document.querySelectorAll(".delete-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
-            removeReminder(reminders[index]);
+            reminders.splice(index, 1);
+            updateReminderList();
         });
     });
 }

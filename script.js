@@ -92,43 +92,32 @@ saveReminderBtn.addEventListener("click", () => {
 
 
 
-// Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
-
-    // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
+
     if (timeDiff <= 0) return;
 
-    // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return; // Прерываем выполнение, так как напоминание отключено
+        return;
     }
 
-    // Запускаем напоминание
     setTimeout(() => {
-        // Отображаем уведомление
         showNotification(reminder.comment);
 
-        // Если включено автоматическое удаление по времени
         if (reminder.disableTime && new Date() >= reminder.disableTime) {
             removeReminder(reminder);
-            return; // Прерываем выполнение
+        } else {
+            reminder.datetime = new Date(
+                reminder.datetime.getTime() + reminder.frequency * 60000
+            );
+            updateReminderInDOM(reminder);
+            scheduleReminder(reminder);
         }
-
-        // Устанавливаем новое время напоминания на основе частоты
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
-
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
-
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);
     }, timeDiff);
 }
+
 
 
 // Функция обновления элемента списка напоминаний

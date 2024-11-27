@@ -95,37 +95,40 @@ saveReminderBtn.addEventListener("click", () => {
 // Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
-    const timeDiff = reminder.datetime - now;
 
+    // Если время напоминания уже прошло, пропускаем его
+    const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
+    // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return;
+        return; // Прерываем выполнение, так как напоминание отключено
     }
 
-    // Запускаем таймер
+    // Запускаем напоминание
     setTimeout(() => {
-        const currentReminders = reminders.filter(
-            (r) =>
-                r.datetime.getTime() === reminder.datetime.getTime() && 
-                (!r.disableTime || now < r.disableTime)
+        // Отображаем уведомление
+        showNotification(reminder.comment);
+
+        // Если включено автоматическое удаление по времени
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return; // Прерываем выполнение
+        }
+
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        if (currentReminders.length > 0) {
-            const messages = currentReminders.map((r) => r.comment);
-            showNotification(messages);
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
 
-            // Обновляем время следующих напоминаний
-            currentReminders.forEach((r) => {
-                r.datetime = new Date(r.datetime.getTime() + r.frequency * 60000);
-                updateReminderInDOM(r);
-                scheduleReminder(r);
-            });
-        }
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
-
 
 
 // Функция обновления элемента списка напоминаний
@@ -175,31 +178,14 @@ function removeReminder(reminder) {
     }
 }
 
-//Show grouped notofication once//
-const scheduledNotifications = new Map();  // Храним уже сработавшие уведомления
-
-function scheduleNotification(reminder) {
-  const reminderTime = reminder.time; // Время напоминания (например, 12:00)
-  if (!scheduledNotifications.has(reminderTime)) {
-    // Если уведомление для этого времени еще не показано
-    // Добавляем уведомление
-    showNotification(reminder);
-    scheduledNotifications.set(reminderTime, true);
-  }
-}
-
-
 // Show Windows notification
-function showNotification(messages) {
+function showNotification(message) {
     if (Notification.permission === "granted") {
-        // Группируем сообщения в одно уведомление
-        const body = Array.isArray(messages) ? messages.join("\n") : messages;
-        new Notification("Reminders", { body });
+        new Notification("Reminder", { body: message });
     } else if (Notification.permission === "default") {
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
-                const body = Array.isArray(messages) ? messages.join("\n") : messages;
-                new Notification("Reminders", { body });
+                new Notification("Reminder", { body: message });
             } else {
                 console.warn("Notifications denied by the user.");
             }
@@ -208,7 +194,6 @@ function showNotification(messages) {
         console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
-
 
 // Update the reminder list in the UI
 // Обновление списка напоминаний, добавляем все параметры сразу

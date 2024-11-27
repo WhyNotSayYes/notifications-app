@@ -95,30 +95,30 @@ saveReminderBtn.addEventListener("click", () => {
 // Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
-    const timeDiff = reminder.datetime - now;
 
+    // Если время напоминания уже прошло, пропускаем его
+    const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
+    // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return;
+        return; // Прерываем выполнение, так как напоминание отключено
     }
 
+    // Запускаем напоминание
     setTimeout(() => {
-        // Находим все напоминания с тем же временем
-        const currentDatetime = reminder.datetime.getTime();
-        const sameTimeReminders = reminders.filter(
-            (r) => r.datetime.getTime() === currentDatetime
+        // Группируем напоминания по времени
+        const matchingReminders = reminders.filter(r => 
+            r.datetime.getTime() === reminder.datetime.getTime()
         );
 
-        // Собираем комментарии для группового уведомления
-        const messages = sameTimeReminders.map((r) => r.comment);
-
-        // Показываем уведомление
+        // Создаем одно уведомление для всех напоминаний с этим временем
+        const messages = matchingReminders.map(r => r.comment).join("\n");
         showNotification(messages);
 
-        // Перезапускаем напоминания
-        sameTimeReminders.forEach((r) => {
+        // Устанавливаем новое время напоминания для всех срабатывающих напоминаний
+        matchingReminders.forEach(r => {
             if (r.disableTime && new Date() >= r.disableTime) {
                 removeReminder(r);
             } else {
@@ -126,9 +126,10 @@ function scheduleReminder(reminder) {
                     r.datetime.getTime() + r.frequency * 60000
                 );
                 updateReminderInDOM(r);
-                scheduleReminder(r);
+                scheduleReminder(r); // Перезапуск для обновленного времени
             }
         });
+
     }, timeDiff);
 }
 

@@ -92,7 +92,10 @@ saveReminderBtn.addEventListener("click", () => {
 
 
 
-// Schedule reminders
+// Хранение напоминаний по времени
+const remindersByTime = {};
+
+// scheduleReminder
 function scheduleReminder(reminder) {
     const now = new Date();
 
@@ -106,15 +109,18 @@ function scheduleReminder(reminder) {
         return; // Прерываем выполнение, так как напоминание отключено
     }
 
+    // Группируем напоминания по времени
+    const reminderTimeKey = reminder.datetime.toISOString();
+    if (!remindersByTime[reminderTimeKey]) {
+        remindersByTime[reminderTimeKey] = [];
+    }
+    remindersByTime[reminderTimeKey].push(reminder);
+
     // Запускаем напоминание
     setTimeout(() => {
-        // Отображаем уведомление
-        showNotification(reminder.comment);
-
-        // Если включено автоматическое удаление по времени
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-            return; // Прерываем выполнение
+        // Проверка, если это первое напоминание для данного времени
+        if (remindersByTime[reminderTimeKey]) {
+            showNotificationForTime(reminderTimeKey);
         }
 
         // Устанавливаем новое время напоминания на основе частоты
@@ -178,7 +184,24 @@ function removeReminder(reminder) {
     }
 }
 
-// Show Windows notification
+// Функция для отображения уведомлений для всех напоминаний на одно время
+function showNotificationForTime(timeKey) {
+    const remindersAtTime = remindersByTime[timeKey];
+
+    // Создаем сообщение, которое будет отображено в одном уведомлении
+    let message = 'You have the following reminders:';
+    remindersAtTime.forEach(reminder => {
+        message += `\n- ${reminder.comment}`;
+    });
+
+    // Показываем уведомление для всех напоминаний на это время
+    showNotification(message);
+
+    // Очистка группы напоминаний для этого времени
+    delete remindersByTime[timeKey];
+}
+
+// Обновленная функция showNotification для показа уведомлений
 function showNotification(message) {
     if (Notification.permission === "granted") {
         new Notification("Reminder", { body: message });

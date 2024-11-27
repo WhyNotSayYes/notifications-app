@@ -108,31 +108,27 @@ function scheduleReminder(reminder) {
 
     // Запускаем напоминание
     setTimeout(() => {
-        // Группируем напоминания по времени
-        const matchingReminders = reminders.filter(r => 
-            r.datetime.getTime() === reminder.datetime.getTime()
+        // Отображаем уведомление
+        showNotification(reminder.comment);
+
+        // Если включено автоматическое удаление по времени
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return; // Прерываем выполнение
+        }
+
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        // Создаем одно уведомление для всех напоминаний с этим временем
-        const messages = matchingReminders.map(r => r.comment).join("\n");
-        showNotification(messages);
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
 
-        // Устанавливаем новое время напоминания для всех срабатывающих напоминаний
-        matchingReminders.forEach(r => {
-            if (r.disableTime && new Date() >= r.disableTime) {
-                removeReminder(r);
-            } else {
-                r.datetime = new Date(
-                    r.datetime.getTime() + r.frequency * 60000
-                );
-                updateReminderInDOM(r);
-                scheduleReminder(r); // Перезапуск для обновленного времени
-            }
-        });
-
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
-
 
 
 // Функция обновления элемента списка напоминаний
@@ -182,15 +178,14 @@ function removeReminder(reminder) {
     }
 }
 
-// Show grouped system notifications
-function showNotification(messages) {
-    const messageBody = messages.join("\n"); // Объединяем все сообщения в одну строку
+// Show Windows notification
+function showNotification(message) {
     if (Notification.permission === "granted") {
-        new Notification("Reminder(s)", { body: messageBody });
+        new Notification("Reminder", { body: message });
     } else if (Notification.permission === "default") {
         Notification.requestPermission().then((permission) => {
             if (permission === "granted") {
-                new Notification("Reminder(s)", { body: messageBody });
+                new Notification("Reminder", { body: message });
             } else {
                 console.warn("Notifications denied by the user.");
             }
@@ -199,7 +194,6 @@ function showNotification(messages) {
         console.warn("Notifications are blocked. Please enable them in your browser settings.");
     }
 }
-
 
 // Update the reminder list in the UI
 // Обновление списка напоминаний, добавляем все параметры сразу

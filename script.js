@@ -175,6 +175,20 @@ function removeReminder(reminder) {
     }
 }
 
+//Show grouped notofication once//
+const scheduledNotifications = new Map();  // Храним уже сработавшие уведомления
+
+function scheduleNotification(reminder) {
+  const reminderTime = reminder.time; // Время напоминания (например, 12:00)
+  if (!scheduledNotifications.has(reminderTime)) {
+    // Если уведомление для этого времени еще не показано
+    // Добавляем уведомление
+    showNotification(reminder);
+    scheduledNotifications.set(reminderTime, true);
+  }
+}
+
+
 // Show Windows notification
 function showNotification(messages) {
     if (Notification.permission === "granted") {

@@ -84,6 +84,7 @@ saveReminderBtn.addEventListener("click", () => {
 
         // Запускаем его срабатывание
         scheduleReminder(newReminder);
+        scheduleGroupedReminders();
     }
 
     updateReminderList(); // Обновляем список
@@ -96,6 +97,7 @@ saveReminderBtn.addEventListener("click", () => {
 function scheduleReminder(reminder) {
     const now = new Date();
     const timeDiff = reminder.datetime - now;
+
     if (timeDiff <= 0) return;
 
     if (reminder.disableTime && now >= reminder.disableTime) {
@@ -104,29 +106,56 @@ function scheduleReminder(reminder) {
     }
 
     setTimeout(() => {
-        // Группировка уведомлений по времени
-        const groupedReminders = reminders.filter(r =>
-            r.datetime.toISOString().slice(0, 16) === reminder.datetime.toISOString().slice(0, 16)
-        );
+        // Показываем уведомление для текущего напоминания
+        showNotification(reminder.comment);
 
-        // Показ уведомлений
-        groupedReminders.forEach(r => {
-            showNotification(r.comment);
-        });
-
-        // Обновляем время следующего напоминания или удаляем по необходимости
-        groupedReminders.forEach(r => {
-            if (r.disableTime && new Date() >= r.disableTime) {
-                removeReminder(r);
-            } else {
-                r.datetime = new Date(r.datetime.getTime() + r.frequency * 60000);
-                updateReminderInDOM(r);
-                scheduleReminder(r);
-            }
-        });
+        // Проверяем, нужно ли удалить напоминание после срабатывания
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+        } else {
+            // Пересчитываем время следующего срабатывания
+            reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+            updateReminderInDOM(reminder);
+            scheduleReminder(reminder); // Перезапуск таймера
+        }
     }, timeDiff);
 }
 
+
+function scheduleGroupedReminders() {
+    const now = new Date();
+
+    // Группируем напоминания по времени срабатывания (без секунд)
+    const groupedReminders = reminders.reduce((groups, reminder) => {
+        const key = reminder.datetime.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(reminder);
+        return groups;
+    }, {});
+
+    Object.keys(groupedReminders).forEach((key) => {
+        const group = groupedReminders[key];
+        const timeDiff = new Date(group[0].datetime) - now;
+
+        if (timeDiff > 0) {
+            setTimeout(() => {
+                // Показываем уведомления одновременно
+                group.forEach((reminder) => showNotification(reminder.comment));
+
+                // Обновляем время для повторяющихся напоминаний
+                group.forEach((reminder) => {
+                    if (reminder.disableTime && now >= new Date(reminder.disableTime)) {
+                        removeReminder(reminder);
+                    } else {
+                        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+                        updateReminderInDOM(reminder);
+                        scheduleReminder(reminder); // Перезапуск
+                    }
+                });
+            }, timeDiff);
+        }
+    });
+}
 
 
 // Функция обновления элемента списка напоминаний

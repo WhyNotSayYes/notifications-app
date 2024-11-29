@@ -106,7 +106,7 @@ function scheduleReminder(reminder) {
     // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return; // Прерываем выполнение, так как напоминание отключено
+        return;
     }
 
     // Группируем напоминания по времени
@@ -114,11 +114,14 @@ function scheduleReminder(reminder) {
     if (!remindersByTime[reminderTimeKey]) {
         remindersByTime[reminderTimeKey] = [];
     }
-    remindersByTime[reminderTimeKey].push(reminder);
+    // Убедимся, что одно и то же напоминание не добавляется несколько раз
+    if (!remindersByTime[reminderTimeKey].includes(reminder)) {
+        remindersByTime[reminderTimeKey].push(reminder);
+    }
 
     // Запускаем напоминание
     setTimeout(() => {
-        // Проверка, если это первое напоминание для данного времени
+        // Показываем уведомление, если время настало
         if (remindersByTime[reminderTimeKey]) {
             showNotificationForTime(reminderTimeKey);
         }
@@ -187,17 +190,28 @@ function removeReminder(reminder) {
 // Функция для отображения уведомлений для всех напоминаний на одно время
 function showNotificationForTime(timeKey) {
     const remindersAtTime = remindersByTime[timeKey];
+    if (!remindersAtTime) return;
 
-    // Создаем сообщение, которое будет отображено в одном уведомлении
+    // Убираем напоминания, которые были удалены из общего массива
+    const activeReminders = remindersAtTime.filter((reminder) =>
+        reminders.includes(reminder)
+    );
+
+    if (activeReminders.length === 0) {
+        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
+        return;
+    }
+
+    // Создаем сообщение для уведомления
     let message = 'You have the following reminders:';
-    remindersAtTime.forEach(reminder => {
+    activeReminders.forEach(reminder => {
         message += `\n- ${reminder.comment}`;
     });
 
-    // Показываем уведомление для всех напоминаний на это время
+    // Показываем уведомление
     showNotification(message);
 
-    // Очистка группы напоминаний для этого времени
+    // Очищаем уведомления для этого времени
     delete remindersByTime[timeKey];
 }
 

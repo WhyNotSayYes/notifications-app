@@ -5,7 +5,6 @@ class Reminder {
         this.datetime = new Date(datetime);
         this.frequency = frequency; // Frequency in minutes
         this.disableTime = disableTime ? new Date(disableTime) : null;
-        this.timeoutId = null;
     }
 }
 
@@ -96,14 +95,6 @@ saveReminderBtn.addEventListener("click", () => {
 // Хранение напоминаний по времени
 const remindersByTime = {};
 
-// Функция для отмены таймера
-function cancelReminderTimeout(reminder) {
-    if (reminder.timeoutId) {
-        clearTimeout(reminder.timeoutId);
-        reminder.timeoutId = null;
-    }
-}
-
 // scheduleReminder
 function scheduleReminder(reminder) {
     const now = new Date();
@@ -115,8 +106,6 @@ function scheduleReminder(reminder) {
             delete remindersByTime[key]; // Удаляем пустые ключи
         }
     }
-
-    cancelReminderTimeout(reminder);
 
     // Проверяем время напоминания
     const timeDiff = reminder.datetime - now;
@@ -138,7 +127,7 @@ function scheduleReminder(reminder) {
     remindersByTime[reminderTimeKey].push(reminder);
 
     // Устанавливаем таймер
-    reminder.timeoutId = setTimeout(() => {
+    setTimeout(() => {
         if (remindersByTime[reminderTimeKey]) {
             showNotificationForTime(reminderTimeKey);
         }

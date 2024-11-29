@@ -99,24 +99,24 @@ const remindersByTime = {};
 function scheduleReminder(reminder) {
     const now = new Date();
 
-    // Если время напоминания уже прошло, пропускаем его
-    const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) return;
-
-    // Проверка времени выключения, если оно задано
-    if (reminder.disableTime && now >= reminder.disableTime) {
-        removeReminder(reminder);
-        return;
-    }
-
-    // Обновляем время в remindersByTime, если оно изменилось
+    // Удаляем напоминание из старой группы времени, если оно было обновлено
     for (const key in remindersByTime) {
-        remindersByTime[key] = remindersByTime[key].filter(
-            (r) => r !== reminder
-        );
+        remindersByTime[key] = remindersByTime[key].filter((r) => r !== reminder);
         if (remindersByTime[key].length === 0) {
             delete remindersByTime[key]; // Удаляем пустые ключи
         }
+    }
+
+    // Проверяем время напоминания
+    const timeDiff = reminder.datetime - now;
+
+    if (timeDiff <= 0) {
+        // Если время напоминания уже прошло, устанавливаем следующее срабатывание
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
+        );
+        scheduleReminder(reminder);
+        return;
     }
 
     // Группируем напоминания по времени
@@ -126,21 +126,19 @@ function scheduleReminder(reminder) {
     }
     remindersByTime[reminderTimeKey].push(reminder);
 
-    // Запускаем напоминание
+    // Устанавливаем таймер
     setTimeout(() => {
         if (remindersByTime[reminderTimeKey]) {
             showNotificationForTime(reminderTimeKey);
         }
 
-        // Устанавливаем новое время напоминания на основе частоты
+        // Устанавливаем следующее время напоминания
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        // Обновляем элемент в списке
+        // Обновляем DOM и перезапускаем
         updateReminderInDOM(reminder);
-
-        // Перезапускаем напоминание
         scheduleReminder(reminder);
     }, timeDiff);
 }
@@ -288,13 +286,16 @@ function updateReminderList() {
 
 // Edit reminder
 function editReminder(reminder) {
-    editingReminder = reminder; // Сохраняем редактируемое напоминание
+    editingReminder = reminder;
 
-    // Устанавливаем поля для редактирования
+    // Заполняем поля для редактирования
     document.getElementById("comment").value = reminder.comment;
-    const localDatetime = new Date(reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000)
+
+    const localDatetime = new Date(
+        reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000
+    )
         .toISOString()
-        .slice(0, 16); // Формат для datetime-local
+        .slice(0, 16); // Формат для <input type="datetime-local">
     document.getElementById("reminder-datetime").value = localDatetime;
 
     if (reminder.frequency && reminder.frequency !== 60 && reminder.frequency !== 120) {
@@ -322,10 +323,10 @@ function editReminder(reminder) {
         document.getElementById("disable-datetime").value = "";
     }
 
-    // При закрытии попапа перезапускаем напоминание с новыми данными
+    // Показываем попап
     popup.classList.remove("hidden");
 
-    saveReminderBtn.addEventListener("click", () => {
+    saveReminderBtn.onclick = () => {
         // Применяем изменения
         reminder.comment = document.getElementById("comment").value;
         reminder.datetime = new Date(document.getElementById("reminder-datetime").value);
@@ -336,11 +337,11 @@ function editReminder(reminder) {
             ? new Date(document.getElementById("disable-datetime").value)
             : null;
 
-        // Обновляем DOM и перезапускаем напоминание
+        // Обновляем список и перезапускаем напоминание
         updateReminderList();
         scheduleReminder(reminder);
         popup.classList.add("hidden");
-    });
+    };
 }
 
 // Format time left

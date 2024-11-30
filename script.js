@@ -110,13 +110,10 @@ function scheduleReminder(reminder) {
     // Проверяем время напоминания
     const timeDiff = reminder.datetime - now;
 
+    // Если время напоминания уже прошло, устанавливаем следующее срабатывание
     if (timeDiff <= 0) {
-        // Если время напоминания уже прошло, устанавливаем следующее срабатывание
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
-        scheduleReminder(reminder);
-        return;
+        // Проверяем, нужно ли работать с новой датой
+        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
     }
 
     // Группируем напоминания по времени
@@ -131,16 +128,14 @@ function scheduleReminder(reminder) {
         if (remindersByTime[reminderTimeKey]) {
             showNotificationForTime(reminderTimeKey);
         }
-
+        
         // Устанавливаем следующее время напоминания
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
-
+        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+        
         // Обновляем DOM и перезапускаем
         updateReminderInDOM(reminder);
         scheduleReminder(reminder);
-    }, timeDiff);
+    }, timeDiff > 0 ? timeDiff : 0);
 }
 
 
@@ -149,9 +144,9 @@ function updateReminderInDOM(reminder) {
     const index = reminders.indexOf(reminder);
     if (index !== -1) {
         const listItem = reminderList.children[index];
-
         const now = new Date();
         const timeDiff = reminder.datetime - now;
+        const disableTime = reminder.disableTime ? `Until ${reminder.disableTime.toLocaleString()}` : "No limit";
         const timeLeft = formatTimeLeft(timeDiff);
 
         // Обновляем содержимое элемента списка
@@ -160,11 +155,7 @@ function updateReminderInDOM(reminder) {
                 <div class="comment">${reminder.comment}</div>
                 <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
                 <div class="time-left">Time left: ${timeLeft}</div>
-                ${
-                    reminder.disableTime
-                        ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>`
-                        : ""
-                }
+                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ""}
             </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
@@ -179,7 +170,6 @@ function updateReminderInDOM(reminder) {
         });
     }
 }
-
 
 
 // Функция удаления напоминания

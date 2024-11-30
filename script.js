@@ -95,47 +95,61 @@ saveReminderBtn.addEventListener("click", () => {
 // Хранение напоминаний по времени
 const remindersByTime = {};
 
+// Хранение таймеров
+const timers = new Map();
+
+
+// Удаляет таймер напоминания
+
+function clearReminderTimer(reminder) {
+    if (timers.has(reminder)) {
+        clearTimeout(timers.get(reminder)); // Очищаем старый таймер
+        timers.delete(reminder); // Удаляем его из Map
+    }
+}
+
+if (editingReminder) {
+    // Удаляем таймер старого напоминания
+    clearReminderTimer(editingReminder);
+
+    // Обновляем свойства напоминания
+    editingReminder.comment = comment;
+    editingReminder.datetime = new Date(datetime);
+    editingReminder.frequency = frequency;
+    editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
+
+    // Перезапускаем с новыми параметрами
+    scheduleReminder(editingReminder);
+} else {
+    // Создаем новое напоминание
+    const newReminder = new Reminder(comment, datetime, frequency, disableTime);
+    reminders.push(newReminder);
+    scheduleReminder(newReminder);
+}
+
 // scheduleReminder
 function scheduleReminder(reminder) {
+    clearReminderTimer(reminder); // Удаляем текущий таймер перед созданием нового
+
     const now = new Date();
+    const reminderTime = new Date(reminder.datetime);
+    const timeDiff = reminderTime - now;
 
-    // Удаляем напоминание из старой группы времени, если оно было обновлено
-    for (const key in remindersByTime) {
-        remindersByTime[key] = remindersByTime[key].filter((r) => r !== reminder);
-        if (remindersByTime[key].length === 0) {
-            delete remindersByTime[key]; // Удаляем пустые ключи
+    // Устанавливаем таймер для напоминания
+    const timerId = setTimeout(function triggerReminder() {
+        showNotification(reminder.comment); // Показываем уведомление через Notifications API
+
+        // Если указана частота, планируем следующее напоминание
+        if (reminder.frequency) {
+            reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000); // Обновляем время
+            scheduleReminder(reminder); // Перепланируем следующее напоминание
         }
-    }
 
-    // Проверяем время напоминания
-    const timeDiff = reminder.datetime - now;
-
-    // Если время напоминания уже прошло, устанавливаем следующее срабатывание
-    if (timeDiff <= 0) {
-        // Проверяем, нужно ли работать с новой датой
-        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-    }
-
-    // Группируем напоминания по времени
-    const reminderTimeKey = reminder.datetime.toISOString();
-    if (!remindersByTime[reminderTimeKey]) {
-        remindersByTime[reminderTimeKey] = [];
-    }
-    remindersByTime[reminderTimeKey].push(reminder);
-
-    // Устанавливаем таймер
-    setTimeout(() => {
-        if (remindersByTime[reminderTimeKey]) {
-            showNotificationForTime(reminderTimeKey);
-        }
-        
-        // Устанавливаем следующее время напоминания
-        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-        
-        // Обновляем DOM и перезапускаем
-        updateReminderInDOM(reminder);
-        scheduleReminder(reminder);
+        updateReminderInDOM(reminder); // Обновляем DOM
     }, timeDiff > 0 ? timeDiff : 0);
+
+    // Сохраняем таймер в Map
+    timers.set(reminder, timerId);
 }
 
 
@@ -223,11 +237,11 @@ function showNotification(message) {
             if (permission === "granted") {
                 new Notification("Reminder", { body: message });
             } else {
-                console.warn("Notifications denied by the user.");
+                console.warn("Уведомления отклонены пользователем.");
             }
         });
     } else {
-        console.warn("Notifications are blocked. Please enable them in your browser settings.");
+        console.warn("Уведомления заблокированы. Включите их в настройках браузера.");
     }
 }
 

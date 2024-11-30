@@ -99,43 +99,26 @@ const remindersByTime = {};
 function scheduleReminder(reminder) {
     const now = new Date();
 
-    // Удаляем напоминание из старой группы времени, если оно было обновлено
-    for (const key in remindersByTime) {
-        remindersByTime[key] = remindersByTime[key].filter((r) => r !== reminder);
-        if (remindersByTime[key].length === 0) {
-            delete remindersByTime[key]; // Удаляем пустые ключи
+    // Прямое удаление из remindersByTime перед новым расписанием
+    const reminderTimeKeyToRemove = reminder.datetime.toISOString();
+    if (remindersByTime[reminderTimeKeyToRemove]) {
+        remindersByTime[reminderTimeKeyToRemove] = remindersByTime[reminderTimeKeyToRemove].filter(r => r !== reminder);
+        if (remindersByTime[reminderTimeKeyToRemove].length === 0) {
+            delete remindersByTime[reminderTimeKeyToRemove]; // Удаляем пустые ключи
         }
     }
 
-    // Проверяем время напоминания
+    // Проверяем разницу во времени
     const timeDiff = reminder.datetime - now;
-
-    // Если время напоминания уже прошло, устанавливаем следующее срабатывание
-    if (timeDiff <= 0) {
-        // Проверяем, нужно ли работать с новой датой
-        reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-    }
-
-    // Группируем напоминания по времени
-    const reminderTimeKey = reminder.datetime.toISOString();
-    if (!remindersByTime[reminderTimeKey]) {
-        remindersByTime[reminderTimeKey] = [];
-    }
-    remindersByTime[reminderTimeKey].push(reminder);
 
     // Устанавливаем таймер
     setTimeout(() => {
-        if (remindersByTime[reminderTimeKey]) {
-            showNotificationForTime(reminderTimeKey);
-        }
-        
+        showNotificationForTime(reminderTimeKeyToRemove);
+
         // Устанавливаем следующее время напоминания
         reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
-        
-        // Обновляем DOM и перезапускаем
-        updateReminderInDOM(reminder);
-        scheduleReminder(reminder);
-    }, timeDiff > 0 ? timeDiff : 0);
+        scheduleReminder(reminder); // Планируем следующее срабатывание
+    }, Math.max(timeDiff, 0)); // Убедимся, что timeDiff неотрицательный
 }
 
 
@@ -276,18 +259,18 @@ function updateReminderList() {
 
 // Edit reminder
 function editReminder(reminder) {
+    // Удаляем старое расписание
+    removeReminder(reminder);
+
     editingReminder = reminder;
 
     // Заполняем поля для редактирования
     document.getElementById("comment").value = reminder.comment;
-
-    const localDatetime = new Date(
-        reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000
-    )
+    const localDatetime = new Date(reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 16); // Формат для <input type="datetime-local">
     document.getElementById("reminder-datetime").value = localDatetime;
-
+    
     if (reminder.frequency && reminder.frequency !== 60 && reminder.frequency !== 120) {
         frequencySelect.value = "custom";
         customMinutesField.classList.remove("hidden");
@@ -297,13 +280,11 @@ function editReminder(reminder) {
         customMinutesField.classList.add("hidden");
         customMinutesInput.value = "";
     }
-
+    
     if (reminder.disableTime) {
         disableCheckbox.checked = true;
         disableDatetimeField.classList.remove("hidden");
-        const localDisableDatetime = new Date(
-            reminder.disableTime.getTime() - reminder.disableTime.getTimezoneOffset() * 60000
-        )
+        const localDisableDatetime = new Date(reminder.disableTime.getTime() - reminder.disableTime.getTimezoneOffset() * 60000)
             .toISOString()
             .slice(0, 16);
         document.getElementById("disable-datetime").value = localDisableDatetime;
@@ -315,21 +296,16 @@ function editReminder(reminder) {
 
     // Показываем попап
     popup.classList.remove("hidden");
-
     saveReminderBtn.onclick = () => {
         // Применяем изменения
         reminder.comment = document.getElementById("comment").value;
         reminder.datetime = new Date(document.getElementById("reminder-datetime").value);
-        reminder.frequency = frequencySelect.value === "custom"
-            ? parseInt(customMinutesInput.value) || 60
-            : parseInt(frequencySelect.value);
-        reminder.disableTime = disableCheckbox.checked
-            ? new Date(document.getElementById("disable-datetime").value)
-            : null;
+        reminder.frequency = frequencySelect.value === "custom" ? parseInt(customMinutesInput.value) || 60 : parseInt(frequencySelect.value);
+        reminder.disableTime = disableCheckbox.checked ? new Date(document.getElementById("disable-datetime").value) : null;
 
         // Обновляем список и перезапускаем напоминание
         updateReminderList();
-        scheduleReminder(reminder);
+        scheduleReminder(reminder); // Теперь планируем новое срабатывание
         popup.classList.add("hidden");
     };
 }

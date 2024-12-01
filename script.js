@@ -197,21 +197,29 @@ function updateReminderInDOM(reminder) {
 
 // Функция удаления напоминания
 function removeReminder(reminder) {
-    // Удаляем напоминание из массива reminders
     const index = reminders.indexOf(reminder);
     if (index !== -1) {
-        reminders.splice(index, 1); // Удаляем напоминание из массива
+        reminders.splice(index, 1); // Удаляем напоминание из массива reminders
 
-        // Удаляем напоминание из соответствующего массива в remindersByTime
+        // Вычисляем timeKey для текущего напоминания
         const timeKey = reminder.datetime.toISOString();
+
+        // Логируем для диагностики
+        console.log("Removing reminder with timeKey:", timeKey);
+
         if (remindersByTime[timeKey]) {
-            // Фильтруем напоминания для данного времени
+            // Фильтруем напоминания для этого timeKey
+            const oldLength = remindersByTime[timeKey].length;
             remindersByTime[timeKey] = remindersByTime[timeKey].filter(
                 (r) => r !== reminder
             );
 
-            // Если для этого времени не осталось напоминаний, удаляем ключ
+            // Логируем для диагностики
+            console.log("Updated reminders at timeKey:", timeKey, remindersByTime[timeKey]);
+
+            // Если после фильтрации массив пуст, удаляем ключ
             if (remindersByTime[timeKey].length === 0) {
+                console.log("No reminders left at timeKey, deleting:", timeKey);
                 delete remindersByTime[timeKey];
             }
         }

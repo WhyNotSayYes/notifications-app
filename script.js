@@ -113,7 +113,7 @@ function scheduleReminder(reminder) {
         const newTimeKey = reminder.datetime.toISOString();
 
         if (oldTimeKey !== newTimeKey) {
-            // 3. Если время изменилось, удаляем из старого ключа
+            // 3. Если время изменилось, удаляем напоминание из старого ключа
             remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(r => r !== reminder);
             if (remindersByTime[oldTimeKey].length === 0) {
                 delete remindersByTime[oldTimeKey]; // Удаляем ключ, если массив пуст

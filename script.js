@@ -112,14 +112,15 @@ function scheduleReminder(reminder) {
         const oldTimeKey = reminder.originalTimeKey;
         const newTimeKey = reminder.datetime.toISOString();
 
+        // 3. Если время изменилось, удаляем из старого ключа и добавляем в новый
         if (oldTimeKey !== newTimeKey) {
-            // 3. Если время изменилось, удаляем напоминание из старого ключа
+            // Удаляем напоминание из старого ключа
             remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(r => r !== reminder);
             if (remindersByTime[oldTimeKey].length === 0) {
                 delete remindersByTime[oldTimeKey]; // Удаляем ключ, если массив пуст
             }
 
-            // 4. Добавляем в новый ключ
+            // Добавляем напоминание в новый ключ
             if (!remindersByTime[newTimeKey]) {
                 remindersByTime[newTimeKey] = [];
             }
@@ -128,19 +129,19 @@ function scheduleReminder(reminder) {
         }
     }
 
-    // 5. Проверяем, нужно ли запускать напоминание (время прошло или отключено)
+    // 4. Проверяем, нужно ли запускать напоминание (время прошло или отключено)
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0 || (reminder.disableTime && now >= reminder.disableTime)) {
         return; // Прекращаем обработку, если запуск не нужен
     }
 
-    // 6. Добавляем обновленное напоминание в массив reminders (если оно еще не добавлено)
+    // 5. Добавляем обновленное напоминание в массив reminders (если оно еще не добавлено)
     const reminderIndexInReminders = reminders.indexOf(reminder);
     if (reminderIndexInReminders === -1) {
         reminders.push(reminder);
     }
 
-    // 7. Устанавливаем таймер для нового времени
+    // 6. Устанавливаем таймер для нового времени
     setTimeout(() => {
         // Показываем уведомление
         const reminderTimeKey = reminder.datetime.toISOString();

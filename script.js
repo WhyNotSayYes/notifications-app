@@ -99,16 +99,13 @@ const remindersByTime = {};
 function scheduleReminder(reminder) {
     const now = new Date();
 
-    // Удаление старого напоминания из remindersByTime
-    const oldTimeKey = Object.keys(remindersByTime).find(key =>
-        remindersByTime[key]?.includes(reminder)
-    );
-    if (oldTimeKey) {
-        remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(r => r !== reminder);
-        if (remindersByTime[oldTimeKey].length === 0) {
-            delete remindersByTime[oldTimeKey];
+    // Очистка старого напоминания из remindersByTime
+    Object.keys(remindersByTime).forEach((timeKey) => {
+        remindersByTime[timeKey] = remindersByTime[timeKey].filter(r => r !== reminder);
+        if (remindersByTime[timeKey].length === 0) {
+            delete remindersByTime[timeKey]; // Удаляем ключ, если массив пуст
         }
-    }
+    });
 
     // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
@@ -120,37 +117,35 @@ function scheduleReminder(reminder) {
         return;
     }
 
-    // Группируем напоминания по времени
+    // Добавляем обновленное напоминание в remindersByTime
     const reminderTimeKey = reminder.datetime.toISOString();
     if (!remindersByTime[reminderTimeKey]) {
         remindersByTime[reminderTimeKey] = [];
     }
 
-    // Убедимся, что одно и то же напоминание не добавляется дважды
+    // Добавляем напоминание только один раз
     if (!remindersByTime[reminderTimeKey].includes(reminder)) {
         remindersByTime[reminderTimeKey].push(reminder);
     }
 
-    // Запускаем таймер для текущего напоминания
+    // Устанавливаем таймер для напоминания
     setTimeout(() => {
         // Показываем уведомление
         if (remindersByTime[reminderTimeKey]) {
             showNotificationForTime(reminderTimeKey);
         }
 
-        // Устанавливаем новое время напоминания, учитывая частоту
+        // Пересчитываем следующее срабатывание напоминания
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        // Обновляем DOM
+        // Обновляем DOM для нового времени
         updateReminderInDOM(reminder);
 
-        // Перезапуск для следующего срабатывания
+        // Перезапускаем напоминание
         scheduleReminder(reminder);
     }, timeDiff);
-
-    console.log('Data has been updated');
 }
 
 

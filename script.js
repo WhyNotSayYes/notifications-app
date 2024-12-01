@@ -121,9 +121,13 @@ function scheduleReminder(reminder) {
 
         // 3. Добавляем напоминание в новый ключ
         const newTimeKey = reminder.datetime.toISOString();
+
+        // Проверяем, существует ли уже ключ для нового времени
         if (!remindersByTime[newTimeKey]) {
-            remindersByTime[newTimeKey] = [];
+            remindersByTime[newTimeKey] = []; // Создаем новый ключ, если его нет
         }
+
+        // Добавляем обновленное напоминание в новый ключ
         remindersByTime[newTimeKey].push(reminder);
     }
 

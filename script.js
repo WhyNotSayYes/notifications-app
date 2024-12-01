@@ -78,6 +78,7 @@ saveReminderBtn.addEventListener("click", () => {
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
+        scheduleReminder(editingReminder);
     } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);

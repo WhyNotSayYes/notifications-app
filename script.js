@@ -99,8 +99,9 @@ const remindersByTime = {};
 function scheduleReminder(reminder) {
     const now = new Date();
 
-    // 1. Если это новое напоминание, добавляем его в remindersByTime
+    // 1. Проверяем, является ли это новым напоминанием
     if (!reminder.originalTimeKey) {
+        // Для нового напоминания создаем ключ в remindersByTime
         const reminderTimeKey = reminder.datetime.toISOString();
         if (!remindersByTime[reminderTimeKey]) {
             remindersByTime[reminderTimeKey] = [];
@@ -160,6 +161,7 @@ function scheduleReminder(reminder) {
         scheduleReminder(reminder);
     }, timeDiff);
 }
+
 
 
 

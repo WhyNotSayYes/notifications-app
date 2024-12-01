@@ -117,7 +117,7 @@ function scheduleReminder(reminder) {
     }
 
     // Планируем новое напоминание
-    reminderTimers[reminderKey] = setTimeout(() => {
+    remindersByTime[reminderKey] = setTimeout(() => {
         showNotification(reminder.comment);
 
         // Устанавливаем новое время на основе частоты

@@ -102,6 +102,7 @@ const reminderTimers = {};
 // scheduleReminder
 function scheduleReminder(reminder) {
     const now = new Date();
+    const timeKey = reminder.datetime.toISOString();
 
     // Отменяем старый таймер, если он существует
     const reminderKey = reminders.indexOf(reminder);
@@ -113,24 +114,30 @@ function scheduleReminder(reminder) {
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
 
-    // Проверка времени выключения, если оно задано
-    if (reminder.disableTime && now >= reminder.disableTime) {
-        removeReminder(reminder);
-        return;
+    // Добавляем напоминание в группу времени
+    if (!remindersByTime[timeKey]) {
+        remindersByTime[timeKey] = [];
+    }
+    if (!remindersByTime[timeKey].includes(reminder)) {
+        remindersByTime[timeKey].push(reminder);
     }
 
-    // Планируем новое напоминание
+    // Планируем напоминание
     reminderTimers[reminderKey] = setTimeout(() => {
-        showNotification(reminder.comment);
+        // Показываем уведомления для всех напоминаний на это время
+        showNotificationForTime(timeKey);
 
-        // Устанавливаем новое время на основе частоты
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
+        // Перезапускаем напоминания с повторением
+        remindersByTime[timeKey].forEach((r) => {
+            r.datetime = new Date(r.datetime.getTime() + r.frequency * 60000);
+            scheduleReminder(r); // Перепланируем
+            updateReminderInDOM(r); // Обновляем интерфейс
+        });
 
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);
-        updateReminderInDOM(reminder); // Обновляем отображение
+        // Удаляем время из `remindersByTime`, если больше нет напоминаний
+        if (remindersByTime[timeKey].length === 0) {
+            delete remindersByTime[timeKey];
+        }
     }, timeDiff);
 }
 

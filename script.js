@@ -149,6 +149,8 @@ function scheduleReminder(reminder) {
         // Перезапуск для следующего срабатывания
         scheduleReminder(reminder);
     }, timeDiff);
+
+    console.log('Data has been updated');
 }
 
 

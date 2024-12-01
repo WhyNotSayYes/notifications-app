@@ -104,17 +104,7 @@ function scheduleReminder(reminder) {
     const now = new Date();
     const timeKey = reminder.datetime.toISOString();
 
-    // Отменяем старый таймер, если он существует
-    const reminderKey = reminders.indexOf(reminder);
-    if (reminderTimers[reminderKey]) {
-        clearTimeout(reminderTimers[reminderKey]);
-    }
-
-    // Если время напоминания уже прошло, пропускаем его
-    const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) return;
-
-    // Добавляем напоминание в группу времени
+    // Убедимся, что напоминание добавлено в remindersByTime
     if (!remindersByTime[timeKey]) {
         remindersByTime[timeKey] = [];
     }
@@ -122,19 +112,34 @@ function scheduleReminder(reminder) {
         remindersByTime[timeKey].push(reminder);
     }
 
+    // Рассчитываем время до следующего уведомления
+    const timeDiff = reminder.datetime - now;
+    if (timeDiff <= 0) {
+        console.warn(`Reminder time has already passed: ${reminder.comment}`);
+        return;
+    }
+
     // Планируем напоминание
-    reminderTimers[reminderKey] = setTimeout(() => {
-        // Показываем уведомления для всех напоминаний на это время
+    setTimeout(() => {
+        // Показываем уведомление для всех напоминаний на это время
         showNotificationForTime(timeKey);
 
-        // Перезапускаем напоминания с повторением
-        remindersByTime[timeKey].forEach((r) => {
+        // Перепланируем напоминания, если они должны повторяться
+        remindersByTime[timeKey].forEach((r, index) => {
             r.datetime = new Date(r.datetime.getTime() + r.frequency * 60000);
-            scheduleReminder(r); // Перепланируем
-            updateReminderInDOM(r); // Обновляем интерфейс
+
+            // Обновляем timeKey для нового времени
+            const newTimeKey = r.datetime.toISOString();
+            if (!remindersByTime[newTimeKey]) {
+                remindersByTime[newTimeKey] = [];
+            }
+            remindersByTime[newTimeKey].push(r);
+
+            // Удаляем напоминание из старого timeKey
+            remindersByTime[timeKey].splice(index, 1);
         });
 
-        // Удаляем время из `remindersByTime`, если больше нет напоминаний
+        // Удаляем старый timeKey, если он пуст
         if (remindersByTime[timeKey].length === 0) {
             delete remindersByTime[timeKey];
         }

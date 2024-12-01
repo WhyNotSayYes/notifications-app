@@ -107,6 +107,14 @@ function scheduleReminder(reminder) {
         }
     });
 
+    // Если напоминание уже существует в массиве reminders, заменяем его
+    const reminderIndex = reminders.indexOf(reminder);
+    if (reminderIndex !== -1) {
+        reminders[reminderIndex] = reminder;
+    } else {
+        reminders.push(reminder); // Добавляем новое напоминание, если его нет в массиве
+    }
+
     // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
@@ -123,7 +131,7 @@ function scheduleReminder(reminder) {
         remindersByTime[reminderTimeKey] = [];
     }
 
-    // Добавляем напоминание только один раз
+    // Убедимся, что напоминание добавляется только один раз
     if (!remindersByTime[reminderTimeKey].includes(reminder)) {
         remindersByTime[reminderTimeKey].push(reminder);
     }

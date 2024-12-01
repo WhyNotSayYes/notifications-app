@@ -96,14 +96,16 @@ saveReminderBtn.addEventListener("click", () => {
 // Хранение напоминаний по времени
 const remindersByTime = {};
 
+const reminderTimers = {};
+
 // scheduleReminder
 function scheduleReminder(reminder) {
     const now = new Date();
 
     // Отменяем старый таймер, если он существует
     const reminderKey = reminders.indexOf(reminder);
-    if (remindersByTime[reminderKey]) {
-        clearTimeout(remindersByTime[reminderKey]);
+    if (reminderTimers[reminderKey]) {
+        clearTimeout(reminderTimers[reminderKey]);
     }
 
     // Если время напоминания уже прошло, пропускаем его
@@ -117,7 +119,7 @@ function scheduleReminder(reminder) {
     }
 
     // Планируем новое напоминание
-    remindersByTime[reminderKey] = setTimeout(() => {
+    reminderTimers[reminderKey] = setTimeout(() => {
         showNotification(reminder.comment);
 
         // Устанавливаем новое время на основе частоты

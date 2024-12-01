@@ -11,6 +11,7 @@ class Reminder {
 // Array to store reminders
 const reminders = [];
 
+
 // Selectors for popup and buttons
 const popup = document.getElementById("popup");
 const saveReminderBtn = document.getElementById("save-reminder");
@@ -99,6 +100,12 @@ const remindersByTime = {};
 function scheduleReminder(reminder) {
     const now = new Date();
 
+    // Отменяем старый таймер, если он существует
+    const reminderKey = reminders.indexOf(reminder);
+    if (remindersByTime[reminderKey]) {
+        clearTimeout(remindersByTime[reminderKey]);
+    }
+
     // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
     if (timeDiff <= 0) return;
@@ -109,35 +116,21 @@ function scheduleReminder(reminder) {
         return;
     }
 
-    // Группируем напоминания по времени
-    const reminderTimeKey = reminder.datetime.toISOString();
-    if (!remindersByTime[reminderTimeKey]) {
-        remindersByTime[reminderTimeKey] = [];
-    }
-    // Убедимся, что одно и то же напоминание не добавляется несколько раз
-    if (!remindersByTime[reminderTimeKey].includes(reminder)) {
-        remindersByTime[reminderTimeKey].push(reminder);
-    }
+    // Планируем новое напоминание
+    reminderTimers[reminderKey] = setTimeout(() => {
+        showNotification(reminder.comment);
 
-    // Запускаем напоминание
-    setTimeout(() => {
-        // Показываем уведомление, если время настало
-        if (remindersByTime[reminderTimeKey]) {
-            showNotificationForTime(reminderTimeKey);
-        }
-
-        // Устанавливаем новое время напоминания на основе частоты
+        // Устанавливаем новое время на основе частоты
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
-
         // Перезапускаем напоминание
         scheduleReminder(reminder);
+        updateReminderInDOM(reminder); // Обновляем отображение
     }, timeDiff);
 }
+
 
 
 // Функция обновления элемента списка напоминаний

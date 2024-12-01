@@ -202,15 +202,15 @@ function removeReminder(reminder) {
     if (index !== -1) {
         reminders.splice(index, 1); // Удаляем напоминание из массива
 
-        // Удаляем напоминание из remindersByTime
+        // Удаляем напоминание из соответствующего массива в remindersByTime
         const timeKey = reminder.datetime.toISOString();
         if (remindersByTime[timeKey]) {
-            // Фильтруем напоминания для этого времени
+            // Фильтруем напоминания для данного времени
             remindersByTime[timeKey] = remindersByTime[timeKey].filter(
                 (r) => r !== reminder
             );
 
-            // Если после удаления этого напоминания в timeKey не осталось других, удаляем ключ
+            // Если для этого времени не осталось напоминаний, удаляем ключ
             if (remindersByTime[timeKey].length === 0) {
                 delete remindersByTime[timeKey];
             }

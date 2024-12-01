@@ -197,39 +197,28 @@ function updateReminderInDOM(reminder) {
 
 // Функция удаления напоминания
 function removeReminder(reminder) {
+    // Удаляем напоминание из массива reminders
     const index = reminders.indexOf(reminder);
     if (index !== -1) {
         reminders.splice(index, 1); // Удаляем напоминание из массива
-        updateReminderList(); // Обновляем список
+
+        // Удаляем напоминание из remindersByTime
+        const timeKey = reminder.datetime.toISOString();
+        if (remindersByTime[timeKey]) {
+            // Фильтруем напоминания для этого времени
+            remindersByTime[timeKey] = remindersByTime[timeKey].filter(
+                (r) => r !== reminder
+            );
+
+            // Если после удаления этого напоминания в timeKey не осталось других, удаляем ключ
+            if (remindersByTime[timeKey].length === 0) {
+                delete remindersByTime[timeKey];
+            }
+        }
+
+        // Обновляем список напоминаний на экране
+        updateReminderList();
     }
-}
-
-// Функция для отображения уведомлений для всех напоминаний на одно время
-function showNotificationForTime(timeKey) {
-    const remindersAtTime = remindersByTime[timeKey];
-    if (!remindersAtTime) return;
-
-    // Убираем напоминания, которые были удалены из общего массива
-    const activeReminders = remindersAtTime.filter((reminder) =>
-        reminders.includes(reminder)
-    );
-
-    if (activeReminders.length === 0) {
-        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
-        return;
-    }
-
-    // Создаем сообщение для уведомления
-    let message = 'You have the following reminders:';
-    activeReminders.forEach(reminder => {
-        message += `\n- ${reminder.comment}`;
-    });
-
-    // Показываем уведомление
-    showNotification(message);
-
-    // Очищаем уведомления для этого времени
-    delete remindersByTime[timeKey];
 }
 
 // Обновленная функция showNotification для показа уведомлений

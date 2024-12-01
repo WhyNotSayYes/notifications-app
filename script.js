@@ -81,8 +81,19 @@ saveReminderBtn.addEventListener("click", () => {
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
 
-        // Перепланируем напоминание, передавая старое время
-        scheduleReminder(editingReminder, oldTimeKey);
+        // Удаляем старое напоминание из remindersByTime
+        if (remindersByTime[oldTimeKey]) {
+            remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(
+                (reminder) => reminder !== editingReminder
+            );
+            // Если после удаления старых напоминаний в этом timeKey больше нет, удаляем его
+            if (remindersByTime[oldTimeKey].length === 0) {
+                delete remindersByTime[oldTimeKey];
+            }
+        }
+
+        // Перепланируем напоминание с обновленным временем
+        scheduleReminder(editingReminder);
     } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);

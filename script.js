@@ -195,17 +195,17 @@ function showNotificationForTime(timeKey) {
     const remindersAtTime = remindersByTime[timeKey];
     if (!remindersAtTime) return;
 
-    // Убираем напоминания, которые были удалены из общего массива
+    // Убираем напоминания, которых нет в массиве reminders
     const activeReminders = remindersAtTime.filter((reminder) =>
         reminders.includes(reminder)
     );
 
     if (activeReminders.length === 0) {
-        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
+        delete remindersByTime[timeKey];
         return;
     }
 
-    // Создаем сообщение для уведомления
+    // Создаем объединенное сообщение
     let message = 'You have the following reminders:';
     activeReminders.forEach(reminder => {
         message += `\n- ${reminder.comment}`;
@@ -214,7 +214,7 @@ function showNotificationForTime(timeKey) {
     // Показываем уведомление
     showNotification(message);
 
-    // Очищаем уведомления для этого времени
+    // Удаляем ключ после показа
     delete remindersByTime[timeKey];
 }
 

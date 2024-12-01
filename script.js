@@ -72,12 +72,17 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
-        // Обновление существующего напоминания
+        // Сохраняем старое время перед изменением
+        const oldTimeKey = editingReminder.datetime.toISOString();
+
+        // Обновляем параметры напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
-        scheduleReminder(editingReminder);
+
+        // Перепланируем напоминание, передавая старое время
+        scheduleReminder(editingReminder, oldTimeKey);
     } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);

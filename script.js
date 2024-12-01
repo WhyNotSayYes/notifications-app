@@ -100,19 +100,14 @@ function scheduleReminder(reminder) {
     const now = new Date();
 
     // Очистка старого напоминания из remindersByTime
-    Object.keys(remindersByTime).forEach((timeKey) => {
-        remindersByTime[timeKey] = remindersByTime[timeKey].filter(r => r !== reminder);
-        if (remindersByTime[timeKey].length === 0) {
-            delete remindersByTime[timeKey]; // Удаляем ключ, если массив пуст
+    const oldTimeKey = Object.keys(remindersByTime).find(key =>
+        remindersByTime[key]?.includes(reminder)
+    );
+    if (oldTimeKey) {
+        remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(r => r !== reminder);
+        if (remindersByTime[oldTimeKey].length === 0) {
+            delete remindersByTime[oldTimeKey]; // Удаляем ключ, если массив пуст
         }
-    });
-
-    // Если напоминание уже существует в массиве reminders, заменяем его
-    const reminderIndex = reminders.indexOf(reminder);
-    if (reminderIndex !== -1) {
-        reminders[reminderIndex] = reminder;
-    } else {
-        reminders.push(reminder); // Добавляем новое напоминание, если его нет в массиве
     }
 
     // Если время напоминания уже прошло, пропускаем его

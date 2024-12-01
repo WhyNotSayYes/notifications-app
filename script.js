@@ -125,7 +125,7 @@ function scheduleReminder(reminder) {
     // Планируем напоминание
     reminderTimers[reminderKey] = setTimeout(() => {
         // Показываем уведомления для всех напоминаний на это время
-        showNotificationForTime(timeKey);
+        showNotification(message);
 
         // Перезапускаем напоминания с повторением
         remindersByTime[timeKey].forEach((r) => {

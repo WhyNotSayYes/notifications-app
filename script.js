@@ -11,7 +11,6 @@ class Reminder {
 // Array to store reminders
 const reminders = [];
 
-
 // Selectors for popup and buttons
 const popup = document.getElementById("popup");
 const saveReminderBtn = document.getElementById("save-reminder");
@@ -97,55 +96,49 @@ saveReminderBtn.addEventListener("click", () => {
 // Хранение напоминаний по времени
 const remindersByTime = {};
 
-const reminderTimers = {};
-
 // scheduleReminder
 function scheduleReminder(reminder) {
     const now = new Date();
-    const timeKey = reminder.datetime.toISOString();
 
-    // Убедимся, что напоминание добавлено в remindersByTime
-    if (!remindersByTime[timeKey]) {
-        remindersByTime[timeKey] = [];
-    }
-    if (!remindersByTime[timeKey].includes(reminder)) {
-        remindersByTime[timeKey].push(reminder);
-    }
-
-    // Рассчитываем время до следующего уведомления
+    // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) {
-        console.warn(`Reminder time has already passed: ${reminder.comment}`);
+    if (timeDiff <= 0) return;
+
+    // Проверка времени выключения, если оно задано
+    if (reminder.disableTime && now >= reminder.disableTime) {
+        removeReminder(reminder);
         return;
     }
 
-    // Планируем напоминание
+    // Группируем напоминания по времени
+    const reminderTimeKey = reminder.datetime.toISOString();
+    if (!remindersByTime[reminderTimeKey]) {
+        remindersByTime[reminderTimeKey] = [];
+    }
+    // Убедимся, что одно и то же напоминание не добавляется несколько раз
+    if (!remindersByTime[reminderTimeKey].includes(reminder)) {
+        remindersByTime[reminderTimeKey].push(reminder);
+    }
+
+    // Запускаем напоминание
     setTimeout(() => {
-        // Показываем уведомление для всех напоминаний на это время
-        showNotificationForTime(timeKey);
-
-        // Перепланируем напоминания, если они должны повторяться
-        remindersByTime[timeKey].forEach((r, index) => {
-            r.datetime = new Date(r.datetime.getTime() + r.frequency * 60000);
-
-            // Обновляем timeKey для нового времени
-            const newTimeKey = r.datetime.toISOString();
-            if (!remindersByTime[newTimeKey]) {
-                remindersByTime[newTimeKey] = [];
-            }
-            remindersByTime[newTimeKey].push(r);
-
-            // Удаляем напоминание из старого timeKey
-            remindersByTime[timeKey].splice(index, 1);
-        });
-
-        // Удаляем старый timeKey, если он пуст
-        if (remindersByTime[timeKey].length === 0) {
-            delete remindersByTime[timeKey];
+        // Показываем уведомление, если время настало
+        if (remindersByTime[reminderTimeKey]) {
+            showNotificationForTime(reminderTimeKey);
         }
+
+        // Устанавливаем новое время напоминания на основе частоты
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
+        );
+
+        // Обновляем элемент в списке
+        updateReminderInDOM(reminder);
+
+        // Перезапускаем напоминание
+        scheduleReminder(reminder);
     }, timeDiff);
 }
-
 
 
 // Функция обновления элемента списка напоминаний
@@ -200,17 +193,17 @@ function showNotificationForTime(timeKey) {
     const remindersAtTime = remindersByTime[timeKey];
     if (!remindersAtTime) return;
 
-    // Убираем напоминания, которых нет в массиве reminders
+    // Убираем напоминания, которые были удалены из общего массива
     const activeReminders = remindersAtTime.filter((reminder) =>
         reminders.includes(reminder)
     );
 
     if (activeReminders.length === 0) {
-        delete remindersByTime[timeKey];
+        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
         return;
     }
 
-    // Создаем объединенное сообщение
+    // Создаем сообщение для уведомления
     let message = 'You have the following reminders:';
     activeReminders.forEach(reminder => {
         message += `\n- ${reminder.comment}`;
@@ -219,7 +212,7 @@ function showNotificationForTime(timeKey) {
     // Показываем уведомление
     showNotification(message);
 
-    // Удаляем ключ после показа
+    // Очищаем уведомления для этого времени
     delete remindersByTime[timeKey];
 }
 

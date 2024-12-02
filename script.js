@@ -72,28 +72,11 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
-        // Сохраняем старое время перед изменением
-        const oldTimeKey = editingReminder.datetime.toISOString();
-
-        // Обновляем параметры напоминания
+        // Обновление существующего напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
-
-        // Удаляем старое напоминание из remindersByTime
-        if (remindersByTime[oldTimeKey]) {
-            remindersByTime[oldTimeKey] = remindersByTime[oldTimeKey].filter(
-                (reminder) => reminder !== editingReminder
-            );
-            // Если после удаления старых напоминаний в этом timeKey больше нет, удаляем его
-            if (remindersByTime[oldTimeKey].length === 0) {
-                delete remindersByTime[oldTimeKey];
-            }
-        }
-
-        // Перепланируем напоминание с обновленным временем
-        scheduleReminder(editingReminder);
     } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
@@ -199,34 +182,37 @@ function updateReminderInDOM(reminder) {
 function removeReminder(reminder) {
     const index = reminders.indexOf(reminder);
     if (index !== -1) {
-        reminders.splice(index, 1); // Удаляем напоминание из массива reminders
-
-        // Вычисляем timeKey для текущего напоминания
-        const timeKey = reminder.datetime.toISOString();
-
-        // Логируем для диагностики
-        console.log("Removing reminder with timeKey:", timeKey);
-
-        if (remindersByTime[timeKey]) {
-            // Фильтруем напоминания для этого timeKey
-            const oldLength = remindersByTime[timeKey].length;
-            remindersByTime[timeKey] = remindersByTime[timeKey].filter(
-                (r) => r !== reminder
-            );
-
-            // Логируем для диагностики
-            console.log("Updated reminders at timeKey:", timeKey, remindersByTime[timeKey]);
-
-            // Если после фильтрации массив пуст, удаляем ключ
-            if (remindersByTime[timeKey].length === 0) {
-                console.log("No reminders left at timeKey, deleting:", timeKey);
-                delete remindersByTime[timeKey];
-            }
-        }
-
-        // Обновляем список напоминаний на экране
-        updateReminderList();
+        reminders.splice(index, 1); // Удаляем напоминание из массива
+        updateReminderList(); // Обновляем список
     }
+}
+
+// Функция для отображения уведомлений для всех напоминаний на одно время
+function showNotificationForTime(timeKey) {
+    const remindersAtTime = remindersByTime[timeKey];
+    if (!remindersAtTime) return;
+
+    // Убираем напоминания, которые были удалены из общего массива
+    const activeReminders = remindersAtTime.filter((reminder) =>
+        reminders.includes(reminder)
+    );
+
+    if (activeReminders.length === 0) {
+        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
+        return;
+    }
+
+    // Создаем сообщение для уведомления
+    let message = 'You have the following reminders:';
+    activeReminders.forEach(reminder => {
+        message += `\n- ${reminder.comment}`;
+    });
+
+    // Показываем уведомление
+    showNotification(message);
+
+    // Очищаем уведомления для этого времени
+    delete remindersByTime[timeKey];
 }
 
 // Обновленная функция showNotification для показа уведомлений

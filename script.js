@@ -187,7 +187,7 @@ function scheduleReminder(reminder) {
 
         // Устанавливаем новое время напоминания
         reminder.datetime = new Date(
-            Date(reminder.datetime).getTime() + reminder.frequency * 60000
+            new Date(reminder.datetime).getTime() + reminder.frequency * 60000
         );
 
         // Перезапускаем напоминание

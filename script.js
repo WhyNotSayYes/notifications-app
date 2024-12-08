@@ -57,6 +57,14 @@ disableCheckbox.addEventListener("change", () => {
     }
 });
 
+// Функция для остановки запланированных таймеров
+function clearReminderTimers(reminder) {
+    if (reminder.timeoutId) {
+        clearTimeout(reminder.timeoutId);
+        reminder.timeoutId = null;
+    }
+}
+
 // Save reminder
 saveReminderBtn.addEventListener("click", () => {
     const comment = document.getElementById("comment").value;
@@ -72,11 +80,17 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
+        // Очистка старого таймера
+        clearReminderTimers(editingReminder);
+
         // Обновление существующего напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
+
+        // Перезапуск напоминания
+        scheduleReminder(editingReminder);
     } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
@@ -98,36 +112,46 @@ function scheduleReminder(reminder) {
 
     // Если время напоминания уже прошло, пропускаем его
     const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) return;
+    if (timeDiff <= 0) {
+        reminder.datetime = new Date(now.getTime() + reminder.frequency * 60000);
+    }
 
     // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return; // Прерываем выполнение, так как напоминание отключено
+        return;
     }
 
-    // Запускаем напоминание
-    setTimeout(() => {
+    // Устанавливаем таймер
+    reminder.timeoutId = setTimeout(() => {
         // Отображаем уведомление
         showNotification(reminder.comment);
 
-        // Если включено автоматическое удаление по времени
+        // Проверяем, нужно ли остановить напоминание
         if (reminder.disableTime && new Date() >= reminder.disableTime) {
             removeReminder(reminder);
-            return; // Прерываем выполнение
+            return;
         }
 
-        // Устанавливаем новое время напоминания на основе частоты
+        // Устанавливаем новое время напоминания
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
-        // Обновляем элемент в списке
-        updateReminderInDOM(reminder);
-
         // Перезапускаем напоминание
         scheduleReminder(reminder);
+        updateReminderInDOM(reminder);
     }, timeDiff);
+}
+
+// Измененная функция удаления напоминания
+function removeReminder(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        clearReminderTimers(reminder); // Очищаем таймер
+        reminders.splice(index, 1); // Удаляем из массива
+        updateReminderList(); // Обновляем список
+    }
 }
 
 

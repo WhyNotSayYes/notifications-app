@@ -300,14 +300,14 @@ function updateReminderInDOM(reminder) {
 
 
 // Функция удаления напоминания
-function removeReminder(reminder) {
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        clearReminderTimers(reminder);
-        reminders.splice(index, 1); // Удаляем напоминание из массива
-        updateReminderList(); // Обновляем список
-    }
-}
+// function removeReminder(reminder) {
+//     const index = reminders.indexOf(reminder);
+//     if (index !== -1) {
+//         clearReminderTimers(reminder);
+//         reminders.splice(index, 1); // Удаляем напоминание из массива
+//         updateReminderList(); // Обновляем список
+//     }
+// }
 
 // Show Windows notification
 function showNotification(message) {

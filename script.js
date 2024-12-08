@@ -62,7 +62,7 @@ let editingReminder = null;
 
 // Функция загрузки напоминаний при инициализации
 function initializeReminders() {
-    const remindersRef = ref(database, 'reminders');
+    const remindersRef = ref(db, 'reminders');
     
     onValue(remindersRef, (snapshot) => {
         // Очищаем текущий массив напоминаний

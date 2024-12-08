@@ -28,7 +28,6 @@ class Reminder {
         this.datetime = new Date(datetime);
         this.frequency = frequency; // Frequency in minutes
         this.disableTime = disableTime ? new Date(disableTime) : null;
-        this.id = id;
     }
 
     // Преобразование в объект для Firebase

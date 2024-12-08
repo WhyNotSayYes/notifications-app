@@ -88,6 +88,30 @@ function clearReminderTimers(reminder) {
     }
 }
 
+
+
+// Function to save a reminder to Firebase
+function saveReminderToFirebase(reminder) {
+    const remindersRef = ref(db, 'reminders');
+    if (reminder.id) {
+        // Update existing reminder
+        set(ref(db, `reminders/${reminder.id}`), reminder);
+    } else {
+        // Create new reminder
+        const newReminderRef = push(remindersRef);
+        reminder.id = newReminderRef.key;
+        set(newReminderRef, reminder);
+    }
+}
+
+// Function to remove a reminder from Firebase
+function removeReminderFromFirebase(reminder) {
+    if (reminder.id) {
+        const reminderRef = ref(db, `reminders/${reminder.id}`);
+        set(reminderRef, null);
+    }
+}
+
 // Save reminder
 saveReminderBtn.addEventListener("click", () => {
     const comment = document.getElementById("comment").value;
@@ -103,28 +127,47 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
-        // Очистка старого таймера
         clearReminderTimers(editingReminder);
-
-        // Обновление существующего напоминания
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
-
-        // Перезапуск напоминания
         scheduleReminder(editingReminder);
+        saveReminderToFirebase(editingReminder); // Save updated reminder to Firebase
     } else {
-        // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         reminders.push(newReminder);
-
-        // Запускаем его срабатывание
         scheduleReminder(newReminder);
+        saveReminderToFirebase(newReminder); // Save new reminder to Firebase
     }
 
-    updateReminderList(); // Обновляем список
-    popup.classList.add("hidden"); // Закрываем попап
+    updateReminderList();
+    popup.classList.add("hidden");
+});
+
+// Remove reminder
+function removeReminder(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        clearReminderTimers(reminder);
+        reminders.splice(index, 1);
+        removeReminderFromFirebase(reminder); // Remove reminder from Firebase
+        updateReminderList();
+    }
+}
+
+// Fetch reminders from Firebase on load
+onValue(ref(db, 'reminders'), (snapshot) => {
+    const data = snapshot.val();
+    reminders.length = 0; // Clear existing reminders
+    for (let id in data) {
+        const reminderData = data[id];
+        reminderData.datetime = new Date(reminderData.datetime);
+        if (reminderData.disableTime) reminderData.disableTime = new Date(reminderData.disableTime);
+        reminders.push(reminderData);
+        scheduleReminder(reminderData);
+    }
+    updateReminderList();
 });
 
 
@@ -217,14 +260,14 @@ function updateReminderInDOM(reminder) {
 
 
 // Функция удаления напоминания
-function removeReminder(reminder) {
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        clearReminderTimers(reminder);
-        reminders.splice(index, 1); // Удаляем напоминание из массива
-        updateReminderList(); // Обновляем список
-    }
-}
+// function removeReminder(reminder) {
+//     const index = reminders.indexOf(reminder);
+//     if (index !== -1) {
+//         clearReminderTimers(reminder);
+//         reminders.splice(index, 1); // Удаляем напоминание из массива
+//         updateReminderList(); // Обновляем список
+//     }
+// }
 
 // Show Windows notification
 function showNotification(message) {

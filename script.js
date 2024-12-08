@@ -1,5 +1,27 @@
 //Reminder App working version 1.0 (frontend only)
 
+//Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
+import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBrBT42Yn4nmQ5EHzzZMLN4JJKiV4UbJD4",
+    authDomain: "reminder-app-81d22.firebaseapp.com",
+    databaseURL: "https://reminder-app-81d22-default-rtdb.firebaseio.com/",
+    projectId: "reminder-app-81d22",
+    storageBucket: "reminder-app-81d22.firebasestorage.app",
+    messagingSenderId: "37109372943",
+    appId: "1:37109372943:web:28bf06121469faab47ab7a",
+    measurementId: "G-3XZCVNSRF9",
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getDatabase(app);
+
+
+
 // Reminder class to manage reminders
 class Reminder {
     constructor(comment, datetime, frequency, disableTime = null) {

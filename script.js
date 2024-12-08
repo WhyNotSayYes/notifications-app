@@ -141,7 +141,7 @@ saveReminderBtn.addEventListener("click", () => {
         reminders.push(newReminder);
         scheduleReminder(newReminder);
 
-        console.log(editingReminder.datetime);
+        console.log(editingReminder);
         }
 
     updateReminderList(); // Обновляем список

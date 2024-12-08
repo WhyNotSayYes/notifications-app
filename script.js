@@ -156,7 +156,39 @@ function removeReminder(reminder) {
     }
 }
 
-// Fetch reminders from Firebase on load
+// Schedule reminders with improved logic
+function scheduleReminder(reminder) {
+    const now = new Date();
+
+    // Если время напоминания уже прошло, обновляем его на следующее срабатывание
+    const timeDiff = reminder.datetime - now;
+    if (timeDiff <= 0) {
+        reminder.datetime = new Date(now.getTime() + reminder.frequency * 60000);
+    }
+
+    // Проверка времени выключения, если оно задано
+    if (reminder.disableTime && now >= reminder.disableTime) {
+        removeReminder(reminder);
+        return;
+    }
+
+    // Устанавливаем таймер, если его еще нет
+    if (!reminder.timeoutId) {
+        reminder.timeoutId = setTimeout(() => {
+            showNotification(reminder.comment);
+            if (reminder.disableTime && new Date() >= reminder.disableTime) {
+                removeReminder(reminder);
+                return;
+            }
+            reminder.datetime = new Date(reminder.datetime.getTime() + reminder.frequency * 60000);
+            reminder.timeoutId = null; // Сброс ID таймера перед повторным планированием
+            scheduleReminder(reminder);
+            updateReminderInDOM(reminder);
+        }, timeDiff);
+    }
+}
+
+// Fetch reminders from Firebase on load with improved logic
 onValue(ref(db, 'reminders'), (snapshot) => {
     const data = snapshot.val();
     reminders.length = 0; // Clear existing reminders
@@ -170,45 +202,6 @@ onValue(ref(db, 'reminders'), (snapshot) => {
     updateReminderList();
 });
 
-
-
-// Schedule reminders
-function scheduleReminder(reminder) {
-    const now = new Date();
-
-    // Если время напоминания уже прошло, пропускаем его
-    const timeDiff = reminder.datetime - now;
-    if (timeDiff <= 0) {
-        reminder.datetime = new Date(now.getTime() + reminder.frequency * 60000);
-    }
-
-    // Проверка времени выключения, если оно задано
-    if (reminder.disableTime && now >= reminder.disableTime) {
-        removeReminder(reminder);
-        return;
-    }
-
-    // Устанавливаем таймер
-    reminder.timeoutId = setTimeout(() => {
-        // Отображаем уведомление
-        showNotification(reminder.comment);
-
-        // Проверяем, нужно ли остановить напоминание
-        if (reminder.disableTime && new Date() >= reminder.disableTime) {
-            removeReminder(reminder);
-            return;
-        }
-
-        // Устанавливаем новое время напоминания
-        reminder.datetime = new Date(
-            reminder.datetime.getTime() + reminder.frequency * 60000
-        );
-
-        // Перезапускаем напоминание
-        scheduleReminder(reminder);
-        updateReminderInDOM(reminder);
-    }, timeDiff);
-}
 
 // Измененная функция удаления напоминания
 // function removeReminder(reminder) {

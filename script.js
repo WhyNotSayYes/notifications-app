@@ -30,14 +30,14 @@ let editingReminder = null;
 
 // Загрузка напоминаний из Firebase
 // const remindersRef = ref(db, 'reminders');
-onValue(remindersRef, (snapshot) => {
-    reminders.length = 0; // Очистка локального массива
-    snapshot.forEach((childSnapshot) => {
-        const reminder = childSnapshot.val();
-        reminders.push(reminder);
-    });
-    updateReminderList(); // Обновление интерфейса
-});
+// onValue(remindersRef, (snapshot) => {
+//     reminders.length = 0; // Очистка локального массива
+//     snapshot.forEach((childSnapshot) => {
+//         const reminder = childSnapshot.val();
+//         reminders.push(reminder);
+//     });
+//     updateReminderList(); // Обновление интерфейса
+// });
 
 // Open popup
 newReminderBtn.addEventListener("click", () => {

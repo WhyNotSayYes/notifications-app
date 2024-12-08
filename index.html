@@ -90,6 +90,14 @@
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
         const remindersRef = ref(db, 'reminders');
+        onValue(remindersRef, (snapshot) => {
+            reminders.length = 0; // Очистка локального массива
+            snapshot.forEach((childSnapshot) => {
+                const reminder = childSnapshot.val();
+                reminders.push(reminder);
+            });
+            updateReminderList(); // Обновление интерфейса
+        });
     </script>
     <script src="script.js"></script>
 </body>

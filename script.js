@@ -63,7 +63,7 @@ onValue(remindersRef, (snapshot) => {
         if (reminder.disableTime) {
             reminder.disableTime = new Date(reminder.disableTime);
         }
-
+        
         reminders.push(reminder);
     });
     updateReminderList(); // Обновление интерфейса
@@ -186,7 +186,7 @@ function scheduleReminder(reminder) {
 
         // Устанавливаем новое время напоминания
         reminder.datetime = new Date(
-            reminder.datetime + reminder.frequency * 60000
+            reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
         // Перезапускаем напоминание

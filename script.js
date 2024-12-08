@@ -179,24 +179,26 @@ saveReminderBtn.addEventListener("click", () => {
     }
 
     if (editingReminder) {
-        // Очищаем таймеры для редактируемого напоминания перед обновлением
+        // Обновляем существующее напоминание с сохранением его ID
+        const updatedReminder = new Reminder(
+            comment, 
+            datetime, 
+            frequency, 
+            disableTime, 
+            editingReminder.id  // ВАЖНО: передаем существующий ID
+        );
+
+        // Очищаем таймеры для старого напоминания
         clearReminderTimers(editingReminder);
 
-        // Обновляем существующее напоминание
-        editingReminder.comment = comment;
-        editingReminder.datetime = new Date(datetime);
-        editingReminder.frequency = frequency;
-        editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
-
-        // Сохраняем обновленное напоминание
-        saveReminder(editingReminder);
+        // Сохраняем с тем же ID
+        saveReminder(updatedReminder);
     } else {
         // Создаем новое напоминание
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
         saveReminder(newReminder);
     }
 
-    // Сбрасываем редактируемое напоминание
     editingReminder = null;
     popup.classList.add("hidden");
 });

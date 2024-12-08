@@ -51,11 +51,18 @@ const reminderList = document.getElementById("reminder-items");
 let editingReminder = null;
 
 // Загрузка напоминаний из Firebase
+// Логика загрузки данных из Firebase
 const remindersRef = ref(db, 'reminders');
 onValue(remindersRef, (snapshot) => {
     reminders.length = 0; // Очистка локального массива
     snapshot.forEach((childSnapshot) => {
-        const reminder = childSnapshot.val();
+        const reminderData = childSnapshot.val();
+        const reminder = new Reminder(
+            reminderData.comment,
+            reminderData.datetime,
+            reminderData.frequency,
+            reminderData.disableTime
+        );
         reminders.push(reminder);
     });
     updateReminderList(); // Обновление интерфейса

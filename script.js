@@ -148,7 +148,6 @@ saveReminderBtn.addEventListener("click", () => {
         // Запускаем его срабатывание
         reminders.push(newReminder);
         scheduleReminder(newReminder);
-        console.log(typeof newReminder.datetime);
         }
 
     updateReminderList(); // Обновляем список
@@ -188,6 +187,8 @@ function scheduleReminder(reminder) {
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
+
+        console.log(typeof reminder.datetime);
 
         // Перезапускаем напоминание
         scheduleReminder(reminder);

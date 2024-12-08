@@ -92,10 +92,7 @@ saveReminderBtn.addEventListener("click", () => {
 
 
 
-// Хранение напоминаний по времени
-const remindersByTime = {};
-
-// scheduleReminder
+// Schedule reminders
 function scheduleReminder(reminder) {
     const now = new Date();
 
@@ -106,24 +103,18 @@ function scheduleReminder(reminder) {
     // Проверка времени выключения, если оно задано
     if (reminder.disableTime && now >= reminder.disableTime) {
         removeReminder(reminder);
-        return;
-    }
-
-    // Группируем напоминания по времени
-    const reminderTimeKey = reminder.datetime.toISOString();
-    if (!remindersByTime[reminderTimeKey]) {
-        remindersByTime[reminderTimeKey] = [];
-    }
-    // Убедимся, что одно и то же напоминание не добавляется несколько раз
-    if (!remindersByTime[reminderTimeKey].includes(reminder)) {
-        remindersByTime[reminderTimeKey].push(reminder);
+        return; // Прерываем выполнение, так как напоминание отключено
     }
 
     // Запускаем напоминание
     setTimeout(() => {
-        // Показываем уведомление, если время настало
-        if (remindersByTime[reminderTimeKey]) {
-            showNotificationForTime(reminderTimeKey);
+        // Отображаем уведомление
+        showNotification(reminder.comment);
+
+        // Если включено автоматическое удаление по времени
+        if (reminder.disableTime && new Date() >= reminder.disableTime) {
+            removeReminder(reminder);
+            return; // Прерываем выполнение
         }
 
         // Устанавливаем новое время напоминания на основе частоты
@@ -187,35 +178,7 @@ function removeReminder(reminder) {
     }
 }
 
-// Функция для отображения уведомлений для всех напоминаний на одно время
-function showNotificationForTime(timeKey) {
-    const remindersAtTime = remindersByTime[timeKey];
-    if (!remindersAtTime) return;
-
-    // Убираем напоминания, которые были удалены из общего массива
-    const activeReminders = remindersAtTime.filter((reminder) =>
-        reminders.includes(reminder)
-    );
-
-    if (activeReminders.length === 0) {
-        delete remindersByTime[timeKey]; // Если активных напоминаний нет, очищаем ключ
-        return;
-    }
-
-    // Создаем сообщение для уведомления
-    let message = 'You have the following reminders:';
-    activeReminders.forEach(reminder => {
-        message += `\n- ${reminder.comment}`;
-    });
-
-    // Показываем уведомление
-    showNotification(message);
-
-    // Очищаем уведомления для этого времени
-    delete remindersByTime[timeKey];
-}
-
-// Обновленная функция showNotification для показа уведомлений
+// Show Windows notification
 function showNotification(message) {
     if (Notification.permission === "granted") {
         new Notification("Reminder", { body: message });

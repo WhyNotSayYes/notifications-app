@@ -135,6 +135,7 @@ saveReminderBtn.addEventListener("click", () => {
         // Обновление в Firebase
         const reminderRef = ref(db, `reminders/${editingReminder.id}`);
         set(reminderRef, editingReminder);
+        updateReminderList(); 
         } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
@@ -148,9 +149,10 @@ saveReminderBtn.addEventListener("click", () => {
         // Запускаем его срабатывание
         reminders.push(newReminder);
         scheduleReminder(newReminder);
+        updateReminderList(); 
         }
 
-    updateReminderList(); // Обновляем список
+    // updateReminderList(); // Обновляем список
     popup.classList.add("hidden"); // Закрываем попап
 });
 
@@ -182,8 +184,6 @@ function scheduleReminder(reminder) {
             removeReminder(reminder);
             return;
         }
-
-        console.log(typeof reminder.datetime);
 
         // Устанавливаем новое время напоминания
         reminder.datetime = new Date(

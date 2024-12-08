@@ -26,7 +26,8 @@ const db = getDatabase(app);
 class Reminder {
     constructor(comment, datetime, frequency, disableTime = null) {
         this.comment = comment;
-        this.datetime = new Date(datetime).toISOString();
+        this.datetime = new Date(datetime);
+        // this.datetime = new Date(datetime).toISOString();
         this.frequency = frequency; // Frequency in minutes
         this.disableTime = disableTime ? new Date(disableTime) : null;
     }

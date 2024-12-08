@@ -241,19 +241,19 @@ function updateReminderInDOM(reminder) {
 
 
 // Функция удаления напоминания
-function removeReminder(reminder) {
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        clearReminderTimers(reminder);
-        reminders.splice(index, 1); // Удаляем напоминание из массива
+// function removeReminder(reminder) {
+//     const index = reminders.indexOf(reminder);
+//     if (index !== -1) {
+//         clearReminderTimers(reminder);
+//         reminders.splice(index, 1); // Удаляем напоминание из массива
 
-        // Удаление из Firebase
-        const reminderRef = ref(db, `reminders/${reminder.id}`);
-        set(reminderRef, null);
+//         // Удаление из Firebase
+//         const reminderRef = ref(db, `reminders/${reminder.id}`);
+//         set(reminderRef, null);
 
-        updateReminderList(); // Обновляем список
-    }
-}
+//         updateReminderList(); // Обновляем список
+//     }
+// }
 
 // Show Windows notification
 function showNotification(message) {

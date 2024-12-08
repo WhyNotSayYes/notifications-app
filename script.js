@@ -136,13 +136,17 @@ function clearReminderTimers(reminder) {
 // Save reminder
 async function saveReminder(reminder) {
     try {
+        // Если редактируем существующее напоминание
         if (reminder.id) {
-            // Обновление существующего напоминания
-            const reminderRef = ref(db, `reminders/${reminder.id}`);
+            // Очищаем старый таймер перед обновлением
+            clearReminderTimers(reminder);
+
+            // Обновляем существующее напоминание в Firebase
+            const reminderRef = ref(database, `reminders/${reminder.id}`);
             await set(reminderRef, reminder.toFirebaseObject());
         } else {
             // Создание нового напоминания
-            const remindersRef = ref(db, 'reminders');
+            const remindersRef = ref(database, 'reminders');
             const newReminderRef = push(remindersRef);
             await set(newReminderRef, reminder.toFirebaseObject());
             
@@ -175,12 +179,16 @@ saveReminderBtn.addEventListener("click", () => {
     }
 
     if (editingReminder) {
+        // Очищаем таймеры для редактируемого напоминания перед обновлением
+        clearReminderTimers(editingReminder);
+
         // Обновляем существующее напоминание
         editingReminder.comment = comment;
         editingReminder.datetime = new Date(datetime);
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
 
+        // Сохраняем обновленное напоминание
         saveReminder(editingReminder);
     } else {
         // Создаем новое напоминание
@@ -188,9 +196,10 @@ saveReminderBtn.addEventListener("click", () => {
         saveReminder(newReminder);
     }
 
+    // Сбрасываем редактируемое напоминание
+    editingReminder = null;
     popup.classList.add("hidden");
 });
-
 
 
 // Schedule reminders
@@ -375,7 +384,8 @@ function updateReminderList() {
 
 // Edit reminder
 function editReminder(reminder) {
-    editingReminder = reminder; // Сохраняем редактируемое напоминание
+    // Сохраняем текущие данные редактируемого напоминания
+    editingReminder = reminder;
 
     // Устанавливаем комментарий
     document.getElementById("comment").value = reminder.comment;
@@ -383,20 +393,18 @@ function editReminder(reminder) {
     // Устанавливаем дату и время напоминания (в локальной временной зоне)
     const localDatetime = new Date(reminder.datetime.getTime() - reminder.datetime.getTimezoneOffset() * 60000)
         .toISOString()
-        .slice(0, 16); // Формат для <input type="datetime-local">
+        .slice(0, 16);
     document.getElementById("reminder-datetime").value = localDatetime;
 
     // Устанавливаем частоту повторений
     if (reminder.frequency && reminder.frequency !== 60 && reminder.frequency !== 120) {
-        // Если частота кастомная
         frequencySelect.value = "custom";
         customMinutesField.classList.remove("hidden");
-        customMinutesInput.value = reminder.frequency; // Устанавливаем пользовательское значение
+        customMinutesInput.value = reminder.frequency;
     } else {
-        // Если частота стандартная (60 минут или 120 минут)
         frequencySelect.value = reminder.frequency.toString();
         customMinutesField.classList.add("hidden");
-        customMinutesInput.value = ""; // Очищаем поле для пользовательской частоты
+        customMinutesInput.value = "";
     }
 
     // Устанавливаем дату и время выключения напоминания (если есть)
@@ -405,12 +413,12 @@ function editReminder(reminder) {
         disableDatetimeField.classList.remove("hidden");
         const localDisableDatetime = new Date(reminder.disableTime.getTime() - reminder.disableTime.getTimezoneOffset() * 60000)
             .toISOString()
-            .slice(0, 16); // Формат для <input type="datetime-local">
+            .slice(0, 16);
         document.getElementById("disable-datetime").value = localDisableDatetime;
     } else {
         disableCheckbox.checked = false;
         disableDatetimeField.classList.add("hidden");
-        document.getElementById("disable-datetime").value = ""; // Очищаем поле, если выключение не установлено
+        document.getElementById("disable-datetime").value = "";
     }
 
     // Показываем попап

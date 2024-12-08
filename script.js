@@ -56,6 +56,14 @@ onValue(remindersRef, (snapshot) => {
     reminders.length = 0; // Очистка локального массива
     snapshot.forEach((childSnapshot) => {
         const reminder = childSnapshot.val();
+         // Преобразуем строковые даты обратно в объекты Date
+         if (reminder.datetime) {
+            reminder.datetime = new Date(reminder.datetime);
+        }
+        if (reminder.disableTime) {
+            reminder.disableTime = new Date(reminder.disableTime);
+        }
+        
         reminders.push(reminder);
     });
     updateReminderList(); // Обновление интерфейса

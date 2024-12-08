@@ -56,13 +56,7 @@ const remindersRef = ref(db, 'reminders');
 onValue(remindersRef, (snapshot) => {
     reminders.length = 0; // Очистка локального массива
     snapshot.forEach((childSnapshot) => {
-        const reminderData = childSnapshot.val();
-        const reminder = new Reminder(
-            reminderData.comment,
-            reminderData.datetime,
-            reminderData.frequency,
-            reminderData.disableTime
-        );
+        const reminder = childSnapshot.val();
         reminders.push(reminder);
     });
     updateReminderList(); // Обновление интерфейса
@@ -183,7 +177,9 @@ function scheduleReminder(reminder) {
         }
 
         // Устанавливаем новое время напоминания
-        reminder.datetime = new Date(reminder.datetime).getTime() + reminder.frequency * 60000;
+        reminder.datetime = new Date(
+            reminder.datetime.getTime() + reminder.frequency * 60000
+        );
 
         // Перезапускаем напоминание
         scheduleReminder(reminder);

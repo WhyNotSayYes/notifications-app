@@ -89,6 +89,7 @@
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
+        const remindersRef = ref(db, 'reminders');
     </script>
     <script src="script.js"></script>
 </body>

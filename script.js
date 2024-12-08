@@ -183,12 +183,12 @@ function scheduleReminder(reminder) {
             return;
         }
 
+        console.log(typeof reminder.datetime);
+
         // Устанавливаем новое время напоминания
         reminder.datetime = new Date(
             reminder.datetime.getTime() + reminder.frequency * 60000
         );
-
-        console.log(typeof reminder.datetime);
 
         // Перезапускаем напоминание
         scheduleReminder(reminder);

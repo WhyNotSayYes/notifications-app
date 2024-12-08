@@ -283,9 +283,8 @@ function showNotification(message) {
 }
 
 // Update the reminder list in the UI
-// Обновление списка напоминаний, добавляем все параметры сразу
 function updateReminderList() {
-    reminderList.innerHTML = ""; // Clear the list
+    reminderList.innerHTML = ""; // Очищаем список
 
     reminders.forEach((reminder, index) => {
         const now = new Date();
@@ -296,7 +295,7 @@ function updateReminderList() {
 
         const timeLeft = formatTimeLeft(timeDiff);
 
-        // Обновляем содержимое элемента списка
+        // Создаем элемент списка
         const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
@@ -324,7 +323,7 @@ function updateReminderList() {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
             reminders.splice(index, 1);
-            updateReminderList();
+            updateReminderList(); // Обновляем список после удаления
         });
     });
 }

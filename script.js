@@ -1,32 +1,10 @@
 //Reminder App working version 1.0 (frontend only)
 
-//Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-analytics.js";
-import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBrBT42Yn4nmQ5EHzzZMLN4JJKiV4UbJD4",
-    authDomain: "reminder-app-81d22.firebaseapp.com",
-    databaseURL: "https://reminder-app-81d22-default-rtdb.firebaseio.com/",
-    projectId: "reminder-app-81d22",
-    storageBucket: "reminder-app-81d22.firebasestorage.app",
-    messagingSenderId: "37109372943",
-    appId: "1:37109372943:web:28bf06121469faab47ab7a",
-    measurementId: "G-3XZCVNSRF9",
-};
-
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getDatabase(app);
-
-
-
 // Reminder class to manage reminders
 class Reminder {
     constructor(comment, datetime, frequency, disableTime = null) {
         this.comment = comment;
-        this.datetime = new Date(datetime).toISOString();
+        this.datetime = new Date(datetime);
         this.frequency = frequency; // Frequency in minutes
         this.disableTime = disableTime ? new Date(disableTime) : null;
     }
@@ -49,25 +27,6 @@ const reminderList = document.getElementById("reminder-items");
 
 // Current editing reminder (if any)
 let editingReminder = null;
-
-// Загрузка напоминаний из Firebase
-const remindersRef = ref(db, 'reminders');
-onValue(remindersRef, (snapshot) => {
-    reminders.length = 0; // Очистка локального массива
-    snapshot.forEach((childSnapshot) => {
-        const reminder = childSnapshot.val();
-         // Преобразуем строковые даты обратно в объекты Date
-         if (reminder.datetime) {
-            reminder.datetime = new Date(reminder.datetime);
-        }
-        if (reminder.disableTime) {
-            reminder.disableTime = new Date(reminder.disableTime);
-        }
-        
-        reminders.push(reminder);
-    });
-    updateReminderList(); // Обновление интерфейса
-});
 
 // Open popup
 newReminderBtn.addEventListener("click", () => {
@@ -132,27 +91,18 @@ saveReminderBtn.addEventListener("click", () => {
         editingReminder.frequency = frequency;
         editingReminder.disableTime = disableTime ? new Date(disableTime) : null;
 
-        // Обновление в Firebase
-        const reminderRef = ref(db, `reminders/${editingReminder.id}`);
-        set(reminderRef, editingReminder);
-        updateReminderList(); 
-        } else {
+        // Перезапуск напоминания
+        scheduleReminder(editingReminder);
+    } else {
         // Создание нового напоминания
         const newReminder = new Reminder(comment, datetime, frequency, disableTime);
-
-        // Сохранение в Firebase
-        const remindersRef = ref(db, 'reminders');
-        const newReminderRef = push(remindersRef);
-        newReminder.id = newReminderRef.key; // Генерируем уникальный ключ
-        set(newReminderRef, newReminder);
+        reminders.push(newReminder);
 
         // Запускаем его срабатывание
-        reminders.push(newReminder);
         scheduleReminder(newReminder);
-        updateReminderList(); 
-        }
+    }
 
-    // updateReminderList(); // Обновляем список
+    updateReminderList(); // Обновляем список
     popup.classList.add("hidden"); // Закрываем попап
 });
 
@@ -187,7 +137,7 @@ function scheduleReminder(reminder) {
 
         // Устанавливаем новое время напоминания
         reminder.datetime = new Date(
-            new Date(reminder.datetime).getTime() + reminder.frequency * 60000
+            reminder.datetime.getTime() + reminder.frequency * 60000
         );
 
         // Перезапускаем напоминание
@@ -202,11 +152,6 @@ function removeReminder(reminder) {
     if (index !== -1) {
         clearReminderTimers(reminder); // Очищаем таймер
         reminders.splice(index, 1); // Удаляем из массива
-
-        // Удаление из Firebase
-        const reminderRef = ref(db, `reminders/${reminder.id}`);
-        set(reminderRef, null);
-
         updateReminderList(); // Обновляем список
     }
 }
@@ -251,19 +196,14 @@ function updateReminderInDOM(reminder) {
 
 
 // Функция удаления напоминания
-// function removeReminder(reminder) {
-//     const index = reminders.indexOf(reminder);
-//     if (index !== -1) {
-//         clearReminderTimers(reminder);
-//         reminders.splice(index, 1); // Удаляем напоминание из массива
-
-//         // Удаление из Firebase
-//         const reminderRef = ref(db, `reminders/${reminder.id}`);
-//         set(reminderRef, null);
-
-//         updateReminderList(); // Обновляем список
-//     }
-// }
+function removeReminder(reminder) {
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        clearReminderTimers(reminder);
+        reminders.splice(index, 1); // Удаляем напоминание из массива
+        updateReminderList(); // Обновляем список
+    }
+}
 
 // Show Windows notification
 function showNotification(message) {
@@ -283,8 +223,9 @@ function showNotification(message) {
 }
 
 // Update the reminder list in the UI
+// Обновление списка напоминаний, добавляем все параметры сразу
 function updateReminderList() {
-    reminderList.innerHTML = ""; // Очищаем список
+    reminderList.innerHTML = ""; // Clear the list
 
     reminders.forEach((reminder, index) => {
         const now = new Date();
@@ -295,7 +236,7 @@ function updateReminderList() {
 
         const timeLeft = formatTimeLeft(timeDiff);
 
-        // Создаем элемент списка
+        // Обновляем содержимое элемента списка
         const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
@@ -323,7 +264,7 @@ function updateReminderList() {
         btn.addEventListener("click", (e) => {
             const index = e.target.getAttribute("data-index");
             reminders.splice(index, 1);
-            updateReminderList(); // Обновляем список после удаления
+            updateReminderList();
         });
     });
 }

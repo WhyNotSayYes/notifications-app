@@ -197,6 +197,7 @@ function updateReminderInDOM(reminder) {
 function removeReminder(reminder) {
     const index = reminders.indexOf(reminder);
     if (index !== -1) {
+        clearReminderTimers(reminder);
         reminders.splice(index, 1); // Удаляем напоминание из массива
         updateReminderList(); // Обновляем список
     }

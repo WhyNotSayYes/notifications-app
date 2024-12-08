@@ -29,6 +29,7 @@ const reminderList = document.getElementById("reminder-items");
 let editingReminder = null;
 
 // Загрузка напоминаний из Firebase
+console.log('okay');
 const remindersRef = ref(db, 'reminders');
 onValue(remindersRef, (snapshot) => {
     reminders.length = 0; // Очистка локального массива

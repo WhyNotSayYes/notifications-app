@@ -1,3 +1,5 @@
+//Reminder App working version 1.0 (frontend only)
+
 // Reminder class to manage reminders
 class Reminder {
     constructor(comment, datetime, frequency, disableTime = null) {

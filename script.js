@@ -142,11 +142,11 @@ async function saveReminder(reminder) {
             clearReminderTimers(reminder);
 
             // Обновляем существующее напоминание в Firebase
-            const reminderRef = ref(database, `reminders/${reminder.id}`);
+            const reminderRef = ref(db, `reminders/${reminder.id}`);
             await set(reminderRef, reminder.toFirebaseObject());
         } else {
             // Создание нового напоминания
-            const remindersRef = ref(database, 'reminders');
+            const remindersRef = ref(db, 'reminders');
             const newReminderRef = push(remindersRef);
             await set(newReminderRef, reminder.toFirebaseObject());
             

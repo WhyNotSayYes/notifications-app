@@ -211,14 +211,14 @@ function scheduleReminder(reminder) {
 }
 
 // Измененная функция удаления напоминания
-function removeReminder(reminder) {
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        clearReminderTimers(reminder); // Очищаем таймер
-        reminders.splice(index, 1); // Удаляем из массива
-        updateReminderList(); // Обновляем список
-    }
-}
+// function removeReminder(reminder) {
+//     const index = reminders.indexOf(reminder);
+//     if (index !== -1) {
+//         clearReminderTimers(reminder); // Очищаем таймер
+//         reminders.splice(index, 1); // Удаляем из массива
+//         updateReminderList(); // Обновляем список
+//     }
+// }
 
 
 // Функция обновления элемента списка напоминаний

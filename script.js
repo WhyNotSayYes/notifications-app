@@ -31,6 +31,10 @@ class Reminder {
     }
 }
 
+
+// Firebase Realtime Database operations
+const remindersRef = ref(db, "reminders");
+
 // Загрузка напоминаний из Firebase
 onValue(remindersRef, (snapshot) => {
     const data = snapshot.val();
@@ -106,9 +110,6 @@ function clearReminderTimers(reminder) {
         reminder.timeoutId = null;
     }
 }
-
-// Firebase Realtime Database operations
-const remindersRef = ref(db, "reminders");
 
 // Save reminder
 saveReminderBtn.addEventListener("click", () => {

@@ -107,24 +107,34 @@ saveReminderBtn.addEventListener("click", () => {
 
     if (editingReminder) {
         const reminderKey = editingReminder.key;
+
+        // Удаление всех старых параметров и сохранение новых
         const updatedReminder = {
             comment,
-            datetime,
+            datetime: new Date(datetime).toISOString(),
             frequency,
-            disableTime: disableTime || null,
+            disableTime: disableTime ? new Date(disableTime).toISOString() : null,
         };
-        set(ref(db, `reminders/${reminderKey}`), updatedReminder);
+
+        set(ref(db, `reminders/${reminderKey}`), updatedReminder)
+            .then(() => console.log("Reminder updated successfully"))
+            .catch((error) => console.error("Error updating reminder:", error));
     } else {
         const newReminderRef = push(remindersRef);
-        set(newReminderRef, {
+        const newReminder = {
             comment,
-            datetime,
+            datetime: new Date(datetime).toISOString(),
             frequency,
-            disableTime: disableTime || null,
-        });
+            disableTime: disableTime ? new Date(disableTime).toISOString() : null,
+        };
+
+        set(newReminderRef, newReminder)
+            .then(() => console.log("New reminder saved successfully"))
+            .catch((error) => console.error("Error saving reminder:", error));
     }
 
     popup.classList.add("hidden");
+    updateReminderList(); // Перерисовка интерфейса
 });
 
 
@@ -173,6 +183,14 @@ function removeReminder(reminder) {
     set(ref(db, `reminders/${reminderKey}`), null)
         .then(() => console.log("Reminder deleted successfully"))
         .catch((error) => console.error("Error deleting reminder:", error));
+
+    // Удаление из локального массива и обновление списка
+    const index = reminders.indexOf(reminder);
+    if (index !== -1) {
+        clearReminderTimers(reminder);
+        reminders.splice(index, 1);
+        updateReminderList();
+    }
 }
 
 
@@ -244,46 +262,39 @@ function showNotification(message) {
 // Update the reminder list in the UI
 // Обновление списка напоминаний, добавляем все параметры сразу
 function updateReminderList() {
-    reminderList.innerHTML = ""; // Clear the list
+    reminderList.innerHTML = ""; // Очистка интерфейса
 
     reminders.forEach((reminder, index) => {
         const now = new Date();
-        const timeDiff = reminder.datetime - now;
-        const disableTime = reminder.disableTime
-            ? `Until ${reminder.disableTime.toLocaleString()}`
-            : "No limit";
-
+        const timeDiff = new Date(reminder.datetime) - now;
         const timeLeft = formatTimeLeft(timeDiff);
 
-        // Обновляем содержимое элемента списка
         const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
                 <div class="comment">${reminder.comment}</div>
-                <div class="time">${reminder.datetime.toLocaleString()}</div>
+                <div class="time">Next reminder: ${new Date(reminder.datetime).toLocaleString()}</div>
                 <div class="time-left">Time left: ${timeLeft}</div>
-                ${reminder.disableTime ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>` : ''}
+                ${
+                    reminder.disableTime
+                        ? `<div class="disable-time">Disable at: ${new Date(
+                              reminder.disableTime
+                          ).toLocaleString()}</div>`
+                        : ""
+                }
             </div>
             <button class="edit-btn" data-index="${index}">Edit</button>
             <button class="delete-btn" data-index="${index}">Delete</button>
         `;
 
         reminderList.appendChild(listItem);
-    });
 
-    // Повторно добавляем обработчики для кнопок
-    document.querySelectorAll(".edit-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            const index = e.target.getAttribute("data-index");
-            editReminder(reminders[index]);
+        // Привязка кнопок к соответствующим действиям
+        listItem.querySelector(".edit-btn").addEventListener("click", () => {
+            editReminder(reminder);
         });
-    });
-
-    document.querySelectorAll(".delete-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-            const index = e.target.getAttribute("data-index");
-            reminders.splice(index, 1);
-            updateReminderList();
+        listItem.querySelector(".delete-btn").addEventListener("click", () => {
+            removeReminder(reminder);
         });
     });
 }
@@ -293,25 +304,32 @@ function updateReminderList() {
 function editReminder(reminder) {
     editingReminder = reminder;
 
+    // Установка текущих параметров в интерфейсе
     document.getElementById("comment").value = reminder.comment;
     document.getElementById("reminder-datetime").value = new Date(reminder.datetime)
         .toISOString()
         .slice(0, 16);
-    frequencySelect.value = reminder.frequency.toString();
-    customMinutesInput.value = reminder.frequency === "custom" ? reminder.frequency : "";
+    frequencySelect.value = reminder.frequency === "custom" ? "custom" : reminder.frequency;
+    customMinutesInput.value =
+        reminder.frequency !== 60 && reminder.frequency !== 120
+            ? reminder.frequency
+            : "";
     disableCheckbox.checked = !!reminder.disableTime;
-    document.getElementById("disable-datetime").value = reminder.disableTime || "";
+    document.getElementById("disable-datetime").value = reminder.disableTime
+        ? new Date(reminder.disableTime).toISOString().slice(0, 16)
+        : "";
 
     popup.classList.remove("hidden");
 }
 
+// Загрузка напоминаний из Firebase
 onValue(remindersRef, (snapshot) => {
     const data = snapshot.val();
-    reminders.length = 0; // Clear local reminders
+    reminders.length = 0; // Очистка локального массива
     for (const key in data) {
         reminders.push({ ...data[key], key });
     }
-    updateReminderList();
+    updateReminderList(); // Обновление UI
 });
 
 // Format time left

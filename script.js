@@ -51,7 +51,7 @@ onValue(remindersRef, (snapshot) => {
         scheduleReminder(reminder); // Перезапуск таймеров для загруженных напоминаний
     }
 
-    updateReminderList();
+    updateReminderList(); // Обновление UI
 });
 
 // Array to store reminders
@@ -126,9 +126,9 @@ saveReminderBtn.addEventListener("click", () => {
     if (!comment || !datetime) return alert("Please fill in all required fields.");
 
     if (editingReminder) {
+        // Обновление существующего напоминания
         const reminderKey = editingReminder.key;
 
-        // Обновляем напоминание в Firebase
         const updatedReminder = {
             comment,
             datetime: new Date(datetime).toISOString(),
@@ -138,17 +138,13 @@ saveReminderBtn.addEventListener("click", () => {
 
         set(ref(db, `reminders/${reminderKey}`), updatedReminder)
             .then(() => {
-                editingReminder.comment = comment;
-                editingReminder.datetime = new Date(datetime);
-                editingReminder.frequency = frequency;
-                editingReminder.disableTime = disableTime
-                    ? new Date(disableTime)
-                    : null;
-                scheduleReminder(editingReminder);
+                console.log("Reminder updated successfully");
+                editingReminder = null; // Сброс редактируемого напоминания
+                popup.classList.add("hidden");
             })
             .catch((error) => console.error("Error updating reminder:", error));
     } else {
-        // Сохранение нового напоминания
+        // Создание нового напоминания
         const newReminderRef = push(remindersRef);
         const newReminder = {
             comment,
@@ -159,23 +155,11 @@ saveReminderBtn.addEventListener("click", () => {
 
         set(newReminderRef, newReminder)
             .then(() => {
-                const localReminder = {
-                    ...newReminder,
-                    datetime: new Date(newReminder.datetime),
-                    disableTime: newReminder.disableTime
-                        ? new Date(newReminder.disableTime)
-                        : null,
-                    key: newReminderRef.key,
-                };
-                reminders.push(localReminder);
-                scheduleReminder(localReminder);
-                updateReminderList();
+                console.log("New reminder saved successfully");
+                popup.classList.add("hidden");
             })
             .catch((error) => console.error("Error saving reminder:", error));
     }
-
-    popup.classList.add("hidden");
-    updateReminderList();
 });
 
 
@@ -220,18 +204,12 @@ function scheduleReminder(reminder) {
 // Измененная функция удаления напоминания
 function removeReminder(reminder) {
     const reminderKey = reminder.key;
+
     set(ref(db, `reminders/${reminderKey}`), null)
         .then(() => console.log("Reminder deleted successfully"))
         .catch((error) => console.error("Error deleting reminder:", error));
-
-    // Удаление из локального массива
-    const index = reminders.indexOf(reminder);
-    if (index !== -1) {
-        clearReminderTimers(reminder);
-        reminders.splice(index, 1);
-        updateReminderList();
-    }
 }
+
 
 // Функция обновления элемента списка напоминаний
 function updateReminderInDOM(reminder) {
@@ -305,20 +283,18 @@ function updateReminderList() {
 
     reminders.forEach((reminder, index) => {
         const now = new Date();
-        const timeDiff = new Date(reminder.datetime) - now;
+        const timeDiff = reminder.datetime - now;
         const timeLeft = formatTimeLeft(timeDiff);
 
         const listItem = document.createElement("li");
         listItem.innerHTML = `
             <div class="reminder-details">
                 <div class="comment">${reminder.comment}</div>
-                <div class="time">Next reminder: ${new Date(reminder.datetime).toLocaleString()}</div>
+                <div class="time">Next reminder: ${reminder.datetime.toLocaleString()}</div>
                 <div class="time-left">Time left: ${timeLeft}</div>
                 ${
                     reminder.disableTime
-                        ? `<div class="disable-time">Disable at: ${new Date(
-                              reminder.disableTime
-                          ).toLocaleString()}</div>`
+                        ? `<div class="disable-time">Disable at: ${reminder.disableTime.toLocaleString()}</div>`
                         : ""
                 }
             </div>

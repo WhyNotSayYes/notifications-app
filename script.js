@@ -1,8 +1,8 @@
 //Reminder App version 1.1 (w/ Firebase)
 
-import { initializeApp } from "/node_modules/@firebase/app";
-import { getAnalytics } from "/node_modules/@firebase/analytics";
-import { getDatabase, ref, set, onValue } from "/node_modules/@firebase/database";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getDatabase, ref, set, onValue } from "firebase/database";
 
 // Конфигурация Firebase (скопируйте из консоли Firebase)
 const firebaseConfig = {

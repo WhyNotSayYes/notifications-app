@@ -1,5 +1,25 @@
 //Reminder App version 1.1 (w/ Firebase)
 
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getDatabase, ref, set, onValue } from "firebase/database";
+
+// Конфигурация Firebase (скопируйте из консоли Firebase)
+const firebaseConfig = {
+    apiKey: "AIzaSyBrBT42Yn4nmQ5EHzzZMLN4JJKiV4UbJD4",
+    authDomain: "reminder-app-81d22.firebaseapp.com",
+    databaseURL: "https://reminder-app-81d22-default-rtdb.firebaseio.com",
+    projectId: "reminder-app-81d22",
+    storageBucket: "reminder-app-81d22.firebasestorage.app",
+    messagingSenderId: "37109372943",
+    appId: "1:37109372943:web:28bf06121469faab47ab7a",
+    measurementId: "G-3XZCVNSRF9"
+  };
+
+// Инициализация Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
 // Reminder class to manage reminders
 class Reminder {
     constructor(comment, datetime, frequency, disableTime = null) {

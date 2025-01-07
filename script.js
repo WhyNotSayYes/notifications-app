@@ -1,4 +1,5 @@
 //Reminder App version 1.1 (w/ Firebase)
+import process from 'process'; 
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
